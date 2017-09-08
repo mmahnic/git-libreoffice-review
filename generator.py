@@ -1,6 +1,9 @@
 import os, sys
 import re
 import subprocess as subp
+import zipfile
+import tempfile
+import shutil
 
 
 def strippedLines(text):
@@ -20,6 +23,11 @@ class DiffGeneratorSettings:
         self.encoding = "utf-8"
         self.formatter = MarkdownFormatter()
         self.template = "template/codereview_tmpl.odt"
+        self.templateStyles = {
+                "diff-add": "diff_20_add",
+                "diff-remove": "diff_20_remove",
+                "diff-fn-add": "diff_20_fn_20_add",
+                "diff-fn-remove": "diff_20_fn_20_remove" }
 
 
     @classmethod
@@ -39,9 +47,9 @@ class DiffGeneratorSettings:
     @classmethod
     def testSettings(klass):
         it = klass()
-        if 0:
+        if 1:
             it.commits = [
-                    "e02a8165cae1afbd9a5db96b759a0747387ea5a4   233d12434260469c905a081a5de8585f748cd573",
+                    "1740318e200bfae82987e33267626fda7f955c39   233d12434260469c905a081a5de8585f748cd573",
                     "9ef8b65ad997262f9901d7ee38dd75380f53dfb0" ]
             it.root = "xdata/tscodeexport"
         elif 1:
@@ -130,6 +138,7 @@ class DiffDocumentGenerator:
                     good.append(code)
 
             if len(good) == len(ids):
+                # FIXME: we can't display the initial commit this way, it has no parent!
                 if len(good) == 1:
                     commits.append( ["%s^" % good[0], "%s" % good[0]] )
                 elif len(good) == 2:
@@ -169,8 +178,12 @@ class DiffDocumentGenerator:
         return os.path.join(os.path.dirname(os.path.realpath(__file__)), templateName)
 
 
+    def _getOutputName( self ):
+        return "xdata/%s.odt" % self.settings.name
+
+
     def _createPandocCommand( self ):
-        pandoc = [ "pandoc", "-t", "odt", "-o", "xdata/%s.odt" % self.settings.name ]
+        pandoc = [ "pandoc", "-t", "odt", "-o", self._getOutputName() ]
         if len(self.settings.template) > 0:
             template = self._findTemplate( self.settings.template )
             if template != None and os.path.exists( template ):
@@ -180,6 +193,46 @@ class DiffDocumentGenerator:
 
         # print(pandoc)
         return pandoc
+
+
+    def _applyOpenOfficeDiffStyles( self, content ):
+        rxp = re.compile( '"P[0-9]+"' )
+        tasks = [
+                [ r'(<text:p text:style-name=)"P[0-9]+"(>\+\+\+ )', 'diff-fn-add' ],
+                [ r'(<text:p text:style-name=)"P[0-9]+"(>--- )', 'diff-fn-remove' ],
+                [ r'(<text:p text:style-name=)"P[0-9]+"(>\+)', 'diff-add' ],
+                [ r'(<text:p text:style-name=)"P[0-9]+"(>-)', 'diff-remove' ]
+                ]
+        for task in tasks:
+            rx = re.compile( task[0] )
+            sub = r'\1"%s"\2' % self.settings.templateStyles[task[1]]
+            content = rx.sub(sub, content)
+
+        return content
+
+
+    def _patchOpenOfficeDocument( self ):
+        # We can not define the styles for ODT in markdown. We edit the
+        # content.xml file of the generated document, instead.
+        docfile = self._getOutputName()
+        if not os.path.exists(docfile):
+            return
+
+        tmphandle, tmpname = tempfile.mkstemp()
+        newdoc = zipfile.ZipFile(tmpname, "w")
+        doc = zipfile.ZipFile(docfile, "r")
+        for item in doc.infolist():
+            buffer = doc.read(item.filename)
+            if (item.filename == 'content.xml'):
+                content = doc.read(item).decode("utf-8")
+                content = self._applyOpenOfficeDiffStyles( content )
+                newdoc.writestr("content.xml", content.encode("utf-8"))
+            else:
+                newdoc.writestr(item, buffer)
+        doc.close()
+        newdoc.close()
+        os.close(tmphandle)
+        shutil.move(tmpname, docfile)
 
 
     def run(self):
@@ -206,6 +259,8 @@ class DiffDocumentGenerator:
             print(pout.decode()) # TODO: send to UI
         if len(perr) > 0:
             print(perr.decode()) # TODO: send to UI
+
+        self._patchOpenOfficeDocument()
 
 
 
