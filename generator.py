@@ -1,5 +1,3 @@
-import gitreview_ui as uimain
-import gitreview_ui_support as uimain_s
 import os, sys
 import re
 import subprocess as subp
@@ -191,23 +189,12 @@ class DiffDocumentGenerator:
 
 
 
-def generateDiffDocument():
-    settings = DiffGeneratorSettings.fromGuiFields(uimain_s.w)
-    diffgen = DiffDocumentGenerator(settings)
-    diffgen.run()
-
-
-def setupUiMainSupport():
-    uimain_s.generateDiffDocument = generateDiffDocument
-
-
 def test():
     settings = DiffGeneratorSettings.testSettings()
     diffgen = DiffDocumentGenerator(settings)
     diffgen.run()
 
+
 if __name__ == '__main__':
-    test(); sys.exit()
-    setupUiMainSupport()
-    uimain.vp_start_gui()
+    test()
 
