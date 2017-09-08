@@ -28,18 +28,25 @@ class DiffGeneratorSettings:
         it.commits = strippedLines(dialog.txtCommitIds.get( "1.0", "end-1c" ))
         it.ignores = strippedLines(dialog.txtFilters.get( "1.0", "end-1c" ))
         it.name = dialog.edName.get().strip()
-        # it.paths = [ "." ]
-        # it.root = "."
+        it.root = dialog.edRepository.get().strip()
+        if len(it.name) == 0:
+            it.name = "review"
+        if len(it.root) == 0:
+            it.root = "."
         return it
 
 
     @classmethod
     def testSettings(klass):
         it = klass()
-        it.commits = [
-                "e02a8165cae1afbd9a5db96b759a0747387ea5a4   233d12434260469c905a081a5de8585f748cd573",
-                "9ef8b65ad997262f9901d7ee38dd75380f53dfb0" ]
-        it.root = "xdata/tscodeexport"
+        if 0:
+            it.commits = [
+                    "e02a8165cae1afbd9a5db96b759a0747387ea5a4   233d12434260469c905a081a5de8585f748cd573",
+                    "9ef8b65ad997262f9901d7ee38dd75380f53dfb0" ]
+            it.root = "xdata/tscodeexport"
+        elif 1:
+            it.commits = [ "2679e04a3554def1dd198937bddc9f377b847a7d" ]
+            it.root = r"C:\Users\mmarko\prj\gitapps\wideocar4"
         it.name = "test"
         return it
 
