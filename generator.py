@@ -120,7 +120,7 @@ class DiffDocumentGenerator:
 
         for iddef in self.settings.commits:
             ids = iddef.split()
-            if len(ids) > 2:
+            if len(ids) > 2 or len(ids) == 0:
                 continue
 
             good = []
@@ -130,7 +130,10 @@ class DiffDocumentGenerator:
                     good.append(code)
 
             if len(good) == len(ids):
-                commits.append( good )
+                if len(good) == 1:
+                    commits.append( ["%s^" % good[0], "%s" % good[0]] )
+                else:
+                    commits.append( good )
 
         return commits
 
