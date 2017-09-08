@@ -218,9 +218,9 @@ class DiffDocumentGenerator:
         if not os.path.exists(docfile):
             return
 
-        tmphandle, tmpname = tempfile.mkstemp()
-        newdoc = zipfile.ZipFile(tmpname, "w")
         doc = zipfile.ZipFile(docfile, "r")
+        tmphandle, tmpname = tempfile.mkstemp()
+        newdoc = zipfile.ZipFile(tmpname, "w", zipfile.ZIP_DEFLATED)
         for item in doc.infolist():
             buffer = doc.read(item.filename)
             if (item.filename == 'content.xml'):
