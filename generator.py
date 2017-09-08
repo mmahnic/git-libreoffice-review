@@ -179,19 +179,18 @@ class DiffDocumentGenerator:
                 os.chdir( self.settings.root )
                 difftext += ["", "[cmd] %s" % ( " ".join(command) ), ""]
                 out = subp.check_output( command )
-                difftext += out.decode(self.settings.encoding).split("\n")
+                difftext += out.decode(self.settings.encoding, "replace").split("\n")
             except Exception as e:
                 difftext += ["**Error**: %s" % e, ""]
                 print(e) # TODO: send to UI
             os.chdir( cwd )
 
         difftext = self.settings.formatter.getFormattedDiff(difftext)
-        # for t in difftext: print(t.encode("utf-8").decode("cp1250"))
-        # return
+        # open("xdata/difftext.txt", "w").write("\n".join(difftext).encode("utf-8", "replace").decode("cp1250"))
 
         PIPE=subp.PIPE
         p = subp.Popen( self._createPandocCommand(), stdout=PIPE, stdin=PIPE, stderr=PIPE )
-        (pout, perr) = p.communicate(input=("\n".join(difftext)).encode("utf-8"))
+        (pout, perr) = p.communicate(input=("\n".join(difftext)).encode("utf-8", "replace"))
         if len(pout) > 0:
             print(pout.decode()) # TODO: send to UI
         if len(perr) > 0:
