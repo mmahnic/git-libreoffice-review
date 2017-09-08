@@ -162,10 +162,21 @@ class DiffDocumentGenerator:
         return commands
 
 
+    def _findTemplate( self, templateName ):
+        if templateName.startswith( "." ) or templateName.startswith( "/" ):
+            return templateName
+
+        return os.path.join(os.path.dirname(os.path.realpath(__file__)), templateName)
+
+
     def _createPandocCommand( self ):
         pandoc = [ "pandoc", "-t", "odt", "-o", "xdata/%s.odt" % self.settings.name ]
-        if len(self.settings.template) > 0 and os.path.exists( self.settings.template ):
-            pandoc += ["--reference-odt=%s" % self.settings.template ]
+        if len(self.settings.template) > 0:
+            template = self._findTemplate( self.settings.template )
+            if template != None and os.path.exists( template ):
+                pandoc += ["--reference-odt=%s" % template ]
+            else:
+                print( "Template '%s' not found" % template ) # TODO: send to UI
 
         # print(pandoc)
         return pandoc
