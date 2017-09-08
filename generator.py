@@ -132,8 +132,8 @@ class DiffDocumentGenerator:
             if len(good) == len(ids):
                 if len(good) == 1:
                     commits.append( ["%s^" % good[0], "%s" % good[0]] )
-                else:
-                    commits.append( good )
+                elif len(good) == 2:
+                    commits.append( ["%s^" % good[0], "%s" % good[1]]  )
 
         return commits
 
