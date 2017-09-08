@@ -4,6 +4,7 @@ import subprocess as subp
 import zipfile
 import tempfile
 import shutil
+import datetime as dt
 
 
 def strippedLines(text):
@@ -18,6 +19,7 @@ class DiffGeneratorSettings:
         self.commits = []
         self.ignores = []
         self.name = ""
+        self.now = dt.datetime.now()
         self.paths = [ "." ]
         self.root = "."
         self.encoding = "utf-8"
@@ -179,7 +181,8 @@ class DiffDocumentGenerator:
 
 
     def _getOutputName( self ):
-        return "xdata/%s.odt" % self.settings.name
+        now = self.settings.now
+        return "xdata/%04d%02d%02d_%s.odt" % (now.year, now.month, now.day, self.settings.name)
 
 
     def _createPandocCommand( self ):
