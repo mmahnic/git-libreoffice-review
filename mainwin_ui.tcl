@@ -60,7 +60,8 @@ proc vTclWindow.top37 {base} {
     # CREATING WIDGETS
     ###################
     vTcl::widgets::core::toplevel::createCmd $top -class Toplevel \
-        -background {#d9d9d9} 
+        -background {#d9d9d9} -highlightbackground {#d9d9d9} \
+        -highlightcolor black 
     wm focusmodel $top passive
     wm geometry $top 599x447+767+388
     update
@@ -75,7 +76,7 @@ proc vTclWindow.top37 {base} {
     wm title $top "Git Review"
     vTcl:DefineAlias "$top" "DiffToDoc" vTcl:Toplevel:WidgetProc "" 1
     text $top.tex39 \
-        -background white -font TkTextFont -foreground black -height 154 \
+        -background white -font TkTextFont -foreground black -height 104 \
         -highlightbackground {#d9d9d9} -highlightcolor black \
         -insertbackground black -selectbackground {#c4c4c4} \
         -selectforeground black -undo 1 -width 574 -wrap word 
@@ -83,7 +84,7 @@ proc vTclWindow.top37 {base} {
     .top37.tex39 insert end text
     vTcl:DefineAlias "$top.tex39" "txtCommitIds" vTcl:WidgetProc "DiffToDoc" 1
     text $top.tex40 \
-        -background white -font TkTextFont -foreground black -height 164 \
+        -background white -font TkTextFont -foreground black -height 144 \
         -highlightbackground {#d9d9d9} -highlightcolor black \
         -insertbackground black -selectbackground {#c4c4c4} \
         -selectforeground black -undo 1 -width 574 -wrap word 
@@ -92,19 +93,27 @@ proc vTclWindow.top37 {base} {
     vTcl:DefineAlias "$top.tex40" "txtFilters" vTcl:WidgetProc "DiffToDoc" 1
     entry $top.ent41 \
         -background white -disabledforeground {#a3a3a3} -foreground {#000000} \
-        -insertbackground black 
+        -highlightbackground {#d9d9d9} -highlightcolor black \
+        -insertbackground black -selectbackground {#c4c4c4} \
+        -selectforeground black 
     vTcl:DefineAlias "$top.ent41" "edName" vTcl:WidgetProc "DiffToDoc" 1
     label $top.lab42 \
+        -activebackground {#f9f9f9} -activeforeground black \
         -background {#d9d9d9} -disabledforeground {#a3a3a3} \
-        -foreground {#000000} -text Name: 
+        -foreground {#000000} -highlightbackground {#d9d9d9} \
+        -highlightcolor black -justify right -text Name: 
     vTcl:DefineAlias "$top.lab42" "Label1" vTcl:WidgetProc "DiffToDoc" 1
     label $top.lab43 \
+        -activebackground {#f9f9f9} -activeforeground black \
         -background {#d9d9d9} -disabledforeground {#a3a3a3} \
-        -foreground {#000000} -text {Commit IDs} 
+        -foreground {#000000} -highlightbackground {#d9d9d9} \
+        -highlightcolor black -text {Commit IDs} 
     vTcl:DefineAlias "$top.lab43" "Label2" vTcl:WidgetProc "DiffToDoc" 1
     label $top.lab44 \
+        -activebackground {#f9f9f9} -activeforeground black \
         -background {#d9d9d9} -disabledforeground {#a3a3a3} \
-        -foreground {#000000} -text Exclude 
+        -foreground {#000000} -highlightbackground {#d9d9d9} \
+        -highlightcolor black -text Exclude 
     vTcl:DefineAlias "$top.lab44" "Label3" vTcl:WidgetProc "DiffToDoc" 1
     button $top.but45 \
         -activebackground {#d9d9d9} -activeforeground {#000000} \
@@ -113,26 +122,46 @@ proc vTclWindow.top37 {base} {
         -highlightbackground {#d9d9d9} -highlightcolor black -pady 0 \
         -text Generate 
     vTcl:DefineAlias "$top.but45" "Button1" vTcl:WidgetProc "DiffToDoc" 1
+    entry $top.cpd37 \
+        -background white -disabledforeground {#a3a3a3} -foreground {#000000} \
+        -highlightbackground {#d9d9d9} -highlightcolor black \
+        -insertbackground black -selectbackground {#c4c4c4} \
+        -selectforeground black 
+    vTcl:DefineAlias "$top.cpd37" "edRepository" vTcl:WidgetProc "DiffToDoc" 1
+    label $top.cpd38 \
+        -activebackground {#f9f9f9} -activeforeground black \
+        -background {#d9d9d9} -disabledforeground {#a3a3a3} \
+        -foreground {#000000} -highlightbackground {#d9d9d9} \
+        -highlightcolor black -justify right -text Repository: 
+    vTcl:DefineAlias "$top.cpd38" "Label4" vTcl:WidgetProc "DiffToDoc" 1
     ###################
     # SETTING GEOMETRY
     ###################
     place $top.tex39 \
-        -in $top -x 10 -y 30 -width 574 -relwidth 0 -height 154 -relheight 0 \
+        -in $top -x 10 -y 100 -width 574 -relwidth 0 -height 104 -relheight 0 \
         -anchor nw -bordermode ignore 
     place $top.tex40 \
-        -in $top -x 10 -y 220 -width 574 -relwidth 0 -height 164 -relheight 0 \
+        -in $top -x 10 -y 240 -width 574 -relwidth 0 -height 144 -relheight 0 \
         -anchor nw -bordermode ignore 
     place $top.ent41 \
-        -in $top -x 70 -y 400 -anchor nw -bordermode ignore 
+        -in $top -x 90 -y 10 -width 144 -relwidth 0 -height 21 -relheight 0 \
+        -anchor nw -bordermode ignore 
     place $top.lab42 \
-        -in $top -x 10 -y 400 -anchor nw -bordermode ignore 
+        -in $top -x 10 -y 10 -width 71 -relwidth 0 -height 21 -relheight 0 \
+        -anchor nw -bordermode ignore 
     place $top.lab43 \
-        -in $top -x 10 -y 0 -anchor nw -bordermode ignore 
+        -in $top -x 10 -y 70 -anchor nw -bordermode ignore 
     place $top.lab44 \
-        -in $top -x 10 -y 190 -anchor nw -bordermode ignore 
+        -in $top -x 10 -y 210 -anchor nw -bordermode ignore 
     place $top.but45 \
         -in $top -x 490 -y 400 -width 88 -relwidth 0 -height 24 -relheight 0 \
         -anchor nw -bordermode ignore 
+    place $top.cpd37 \
+        -in $top -x 90 -y 40 -width 494 -relwidth 0 -height 21 -relheight 0 \
+        -anchor nw -bordermode inside 
+    place $top.cpd38 \
+        -in $top -x 10 -y 40 -width 71 -relwidth 0 -height 21 -relheight 0 \
+        -anchor nw -bordermode inside 
 
     vTcl:FireEvent $base <<Ready>>
 }

@@ -1,6 +1,6 @@
-import gitreview_ui as uimain
-import gitreview_ui_support as uimain_s
-from gitreviewdoc import *
+import mainwin_ui as uimain
+import mainwin_ui_support as uimain_s
+from generator import *
 
 
 def generateDiffDocument():
