@@ -15,10 +15,21 @@ def onInit(top, gui, *args, **kwargs):
     uimain_s.w = gui
     uimain_s.top_level = top
     uimain_s.root = top
+    gitroot = findGitDir( os.getcwd() ) or os.getcwd()
     gui.edRepository.delete( 0, "end" )
-    gui.edRepository.insert( 0, os.getcwd() )
-    gui.edName.insert( 0, os.path.basename( os.getcwd() )) # TODO: basename of git root dir
+    gui.edRepository.insert( 0, gitroot )
+    gui.edName.insert( 0, os.path.basename( gitroot ))
     # if 0: gui.txtFilters.insert( 1.0, "\n".join(os.getenv( "PATH" ).split(";")) )
+
+
+def findGitDir( startdir ):
+    curdir = startdir
+    while len(curdir) > 4:
+        if os.path.exists( os.path.join( curdir, ".git" )):
+            return curdir
+        curdir = os.path.dirname( curdir )
+    return None
+
 
 def setupUiMainSupport():
     uimain_s.generateDiffDocument = generateDiffDocument
