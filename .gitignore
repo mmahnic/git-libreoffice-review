@@ -30,3 +30,6 @@ Prj/Vs2010/*.suo
 *.tlog
 *.bak
 *.bak*
+
+*.pyc
+*.output
