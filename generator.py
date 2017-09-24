@@ -6,6 +6,8 @@ import tempfile
 import shutil
 import datetime as dt
 
+from markdownfmt import MarkdownFormatter
+
 
 def strippedLines(text):
     def emptyOrComment(l):
@@ -23,7 +25,6 @@ class DiffGeneratorSettings:
         self.paths = [ "." ]
         self.root = "."
         self.encoding = "utf-8"
-        self.formatter = MarkdownFormatter()
         self.template = "template/codereview_tmpl.odt"
         self.templateStyles = {
                 "diff-add": "diff_20_add",
@@ -61,74 +62,11 @@ class DiffGeneratorSettings:
         return it
 
 
-class MarkdownFormatter:
-    def __init__(self):
-        pass
-
-
-    def getFormattedDiff( self, text ):
-        result = []
-        section = ""
-        blockformat = ""
-
-        def startSection( sectionType, setFormat="" ):
-            nonlocal section, result, blockformat
-            endSection()
-            if setFormat != "":
-                result += [ " ", "~~~~~~~~~~~~~~~ { .%s }" % setFormat ]
-            section = sectionType
-            blockformat = setFormat
-
-        def endSection():
-            nonlocal section, result, blockformat
-            if section != "":
-                if blockformat != "":
-                    result += [ "", "~~~~~~~~~~~~~~~" ]
-                section = ""
-
-        for line in text:
-            if line.startswith( "[cmd]" ):
-                endSection()
-                result += [ "", line.replace( "[cmd]", "#" ) ]
-                continue
-            elif line.startswith( "diff" ):
-                endSection()
-                result += [ "", "## " + line ]
-                continue
-            elif line.startswith( "@@" ):
-                endSection()
-                result += [ "", "### " + line ]
-                continue
-            elif line.startswith( "---" ) or line.startswith( "+++" ):
-                if section != "---":
-                    startSection( "---", "filepaths" )
-            elif line.startswith( "-" ):
-                if section != "-":
-                    startSection( "-", "removed" )
-            elif line.startswith( "+" ):
-                if section != "+":
-                    startSection( "+", "added" )
-            elif line.startswith( " " ):
-                if section != " ":
-                    startSection( " ", "unchanged" )
-            else:
-                endSection()
-            result.append( line )
-
-        endSection()
-        return result
-
-
-class DiffDocumentGenerator:
-    def __init__(self, settings):
-        self.settings = settings
-
-
-    def _getCleanCommits(self):
+    def getCleanCommits(self):
         rxid = re.compile( "[0-9a-fA-F]+" )
         commits = []
 
-        for iddef in self.settings.commits:
+        for iddef in self.commits:
             ids = iddef.split()
             if len(ids) > 2 or len(ids) == 0:
                 continue
@@ -149,28 +87,38 @@ class DiffDocumentGenerator:
         return commits
 
 
-    def _getGitDiffIgnores(self):
+    def getGitDiffIgnores(self):
         ignores = []
-        for ignoreDef in self.settings.ignores:
+        for ignoreDef in self.ignores:
             if ignoreDef.find("'") >= 0:
                 continue
             ignores.append( "':!%s'" % ignoreDef )
         return ignores
 
 
-    def _createGitDiffCommands( self ):
+class DiffGenerator:
+    def __init__(self, settings):
+        self.settings = settings
+
+
+    def createGitDiffCommands( self ):
         git = ["git", "diff"]
         options = [ "-U6" ]
         commands = []
-        for commit in self._getCleanCommits():
+        for commit in self.settings.getCleanCommits():
             command = [] + git
             command += options
             command += commit
             command += ["--" ] + self.settings.paths
-            command += self._getGitDiffIgnores()
+            command += self.settings.getGitDiffIgnores()
             commands.append( command )
 
         return commands
+
+
+class DiffDocumentGenerator:
+    def __init__(self, settings):
+        self.settings = settings
 
 
     def _findTemplate( self, templateName ):
@@ -240,7 +188,8 @@ class DiffDocumentGenerator:
 
     def run(self):
         difftext = []
-        for command in self._createGitDiffCommands():
+        diffcmd = DiffGenerator(self.settings)
+        for command in diffcmd.createGitDiffCommands():
             cwd = os.getcwd()
             try:
                 os.chdir( self.settings.root )
@@ -252,7 +201,7 @@ class DiffDocumentGenerator:
                 print(e) # TODO: send to UI
             os.chdir( cwd )
 
-        difftext = self.settings.formatter.getFormattedDiff(difftext)
+        difftext = MarkdownFormatter().getFormattedDiff(difftext)
         # open("xdata/difftext.txt", "w").write("\n".join(difftext).encode("utf-8", "replace").decode("cp1250"))
 
         PIPE=subp.PIPE
