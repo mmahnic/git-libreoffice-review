@@ -1,59 +1,77 @@
+#!/usr/bin/env cat
 
-class MarkdownFormatter:
+from diffvisitor import DiffLineVisitor
+
+class MarkdownFormatter(DiffLineVisitor):
     def __init__(self):
-        pass
+        self.result = []
+        self.section = ""
+        self.blockformat = ""
 
+    def startSection( self, sectionType, setFormat="" ):
+        self.endSection()
+        if setFormat != "":
+            self.result += [ " ", "~~~~~~~~~~~~~~~ { .%s }" % setFormat ]
+        self.section = sectionType
+        self.blockformat = setFormat
+
+    def endSection(self):
+        if self.section != "":
+            if self.blockformat != "":
+                self.result += [ "", "~~~~~~~~~~~~~~~" ]
+            self.section = ""
+
+    def onStart(self):
+        self.result = []
+        self.section = ""
+        self.blockformat = ""
+
+    def onCommandStart(self, line):
+        self.endSection()
+        self.result += [ "", line.replace( "[cmd]", "#" ) ]
+
+    def onFileStart(self, line):
+        self.endSection()
+        self.result += [ "", "## " + line ]
+
+    def onChunkStart(self, line):
+        self.endSection()
+        self.result += [ "", "### " + line ]
+
+    def onFileRemove(self, line):
+        if self.section != "---":
+            self.startSection( "---", "filepaths" )
+        self.result.append( line )
+
+    def onFileAdd(self, line):
+        if self.section != "---":
+            self.startSection( "---", "filepaths" )
+        self.result.append( line )
+
+    def onLineRemove(self, line):
+        if self.section != "-":
+            self.startSection( "-", "removed" )
+        self.result.append( line )
+
+    def onLineAdd(self, line):
+        if self.section != "+":
+            self.startSection( "+", "added" )
+        self.result.append( line )
+
+    def onLineUnchanged(self, line):
+        if self.section != " ":
+            self.startSection( " ", "unchanged" )
+        self.result.append( line )
+
+    def onOtherLine(self, line):
+        self.endSection()
+        self.result.append( line )
+
+    def onEnd(self):
+        self.endSection()
 
     def getFormattedDiff( self, text ):
-        result = []
-        section = ""
-        blockformat = ""
-
-        def startSection( sectionType, setFormat="" ):
-            nonlocal section, result, blockformat
-            endSection()
-            if setFormat != "":
-                result += [ " ", "~~~~~~~~~~~~~~~ { .%s }" % setFormat ]
-            section = sectionType
-            blockformat = setFormat
-
-        def endSection():
-            nonlocal section, result, blockformat
-            if section != "":
-                if blockformat != "":
-                    result += [ "", "~~~~~~~~~~~~~~~" ]
-                section = ""
-
-        for line in text:
-            if line.startswith( "[cmd]" ):
-                endSection()
-                result += [ "", line.replace( "[cmd]", "#" ) ]
-                continue
-            elif line.startswith( "diff" ):
-                endSection()
-                result += [ "", "## " + line ]
-                continue
-            elif line.startswith( "@@" ):
-                endSection()
-                result += [ "", "### " + line ]
-                continue
-            elif line.startswith( "---" ) or line.startswith( "+++" ):
-                if section != "---":
-                    startSection( "---", "filepaths" )
-            elif line.startswith( "-" ):
-                if section != "-":
-                    startSection( "-", "removed" )
-            elif line.startswith( "+" ):
-                if section != "+":
-                    startSection( "+", "added" )
-            elif line.startswith( " " ):
-                if section != " ":
-                    startSection( " ", "unchanged" )
-            else:
-                endSection()
-            result.append( line )
-
-        endSection()
-        return result
+        self.visitLines( text )
+        return self.result
 
 
