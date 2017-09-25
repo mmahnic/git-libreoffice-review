@@ -96,11 +96,13 @@ class DiffGeneratorSettings:
 class DiffGenerator:
     def __init__(self, settings):
         self.settings = settings
+        self.diffMode = "-U6"
+        self.algorithm = "--diff-algorithm=minimal"
 
 
     def createGitDiffCommands( self ):
         git = ["git", "diff"]
-        options = [ "-U6" ]
+        options = [ self.diffMode, self.algorithm ]
         commands = []
         for commit in self.settings.getCleanCommits():
             command = [] + git
