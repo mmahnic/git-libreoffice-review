@@ -2,30 +2,44 @@
 
 class DiffLineVisitor:
     def __init__(self):
-        pass
+        self.section = ""
 
 
     def visitLines( self, text ):
+        self.section = ""
         self.onStart()
         for line in text:
-            if line.startswith( "[cmd]" ):
-                self.onCommandStart(line)
+            if line.startswith( "[cmd] " ):
+                self.section = "command"
+                self.onCommandStart(line[6:])
             elif line.startswith( "diff" ):
+                self.section = "diff"
                 self.onFileStart(line)
             elif line.startswith( "@@" ):
+                self.section = "chunk"
                 self.onChunkStart(line)
             elif line.startswith( "---" ):
                 self.onFileRemove(line)
             elif line.startswith( "+++" ):
                 self.onFileAdd(line)
             elif line.startswith( "-" ):
-                self.onLineRemove(line)
+                if self.section == "chunk":
+                    self.onLineRemove(line)
+                else:
+                    self.onOtherLine(line)
             elif line.startswith( "+" ):
-                self.onLineAdd(line)
+                if self.section == "chunk":
+                    self.onLineAdd(line)
+                else:
+                    self.onOtherLine(line)
             elif line.startswith( " " ):
-                self.onLineUnchanged(line)
+                if self.section == "chunk":
+                    self.onLineUnchanged(line)
+                else:
+                    self.onOtherLine(line)
             else:
-                self.onOtherLine(line)
+                if self.section != "":
+                    self.onOtherLine(line)
         self.onEnd()
 
 
