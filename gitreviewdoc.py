@@ -2,13 +2,14 @@ import os
 import mainwin_ui as uimain
 import mainwin_ui_support as uimain_s
 from generator import DiffGeneratorSettings, DiffGenerator
-from pandocodt import PandocOdtGenerator
+from odt import OdtGenerator as DocGenerator
+# from pandocodt import PandocOdtGenerator as DocGenerator
 
 
 def generateDiffDocument():
     settings = DiffGeneratorSettings.fromGuiFields(uimain_s.w)
     diffcmd = DiffGenerator(settings)
-    diffgen = PandocOdtGenerator(settings)
+    diffgen = DocGenerator(settings)
     diffgen.writeDocument( diffcmd )
 
 
