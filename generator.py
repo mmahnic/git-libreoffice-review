@@ -110,18 +110,19 @@ class DiffGenerator:
             command += commit
             command += ["--" ] + self.settings.paths
             command += self.settings.getGitDiffIgnores()
-            commands.append( command )
+            commands.append( ( command, commit ) )
 
         return commands
 
 
     def generateDiff(self):
         difftext = []
-        for command in self.createGitDiffCommands():
+        for command, commit in self.createGitDiffCommands():
             cwd = os.getcwd()
             try:
                 os.chdir( self.settings.root )
-                difftext += ["", "[cmd] %s" % ( " ".join(command) ), ""]
+                difftext += ["[cmd] %s" % ( " ".join(commit) )]
+                difftext += ["%s" % ( " ".join(command) )]
                 out = subp.check_output( command )
                 difftext += out.decode(self.settings.encoding, "replace").split("\n")
             except Exception as e:
