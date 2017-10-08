@@ -8,7 +8,7 @@ from xml.sax.saxutils import escape as xml_escape
 from markdownfmt import MarkdownFormatter
 from diffvisitor import DiffLineVisitor
 
-Review_Styles = """
+Review_Styles = """\
     <style:style style:name="PX1" style:family="paragraph" style:parent-style-name="Standard"/>
     <style:style style:name="PX2" style:family="paragraph" style:parent-style-name="Preformatted_20_Text"/>
     <style:style style:name="PX3" style:family="paragraph" style:parent-style-name="diff_20_add"/>
@@ -17,12 +17,43 @@ Review_Styles = """
     <style:style style:name="PX6" style:family="paragraph" style:parent-style-name="diff_20_fn_20_remove"/>
     <style:style style:name="PX7" style:family="paragraph" style:parent-style-name="review_20_split"/>
     <style:style style:name="PX8" style:family="paragraph" style:parent-style-name="review_20_comment"/>
+    <style:style style:name="Sect1" style:family="section">
+      <style:section-properties style:editable="false">
+        <style:columns fo:column-count="1" fo:column-gap="0cm"/>
+      </style:section-properties>
+    </style:style>\
+"""
+
+# A document variable 'DisplayMode' is set in a hidden section 'Settings'.
+# Other sections are hidden based on the value of the 'DisplayMode' variable.
+# The variable will be controlled by a macro that will be installed as an ooo extension.
+Document_Variables = """\
+      <text:variable-decls>
+        <text:variable-decl office:value-type="float" text:name="DisplayMode"/>
+      </text:variable-decls>
+      <text:section text:style-name="Sect1" text:name="Settings" text:display="none">
+        <text:p text:style-name="Standard">Display Mode: 1-aded, 2-removed, 3-All <text:s/><text:variable-set text:name="DisplayMode" office:value-type="float" office:value="3" style:data-style-name="N0">3</text:variable-set> </text:p>
+      </text:section>\
+"""
+
+NewCode_Section_Start = """\
+      <text:section text:style-name="Sect1" text:name="diff{isection}" text:condition="ooow:(DisplayMode != 1) AND (DisplayMode != 3)" text:display="condition">\
+"""
+
+OldCode_Section_Start = """\
+      <text:section text:style-name="Sect1" text:name="diff{isection}" text:condition="ooow:(DisplayMode != 2) AND (DisplayMode != 3)" text:display="condition">\
+"""
+
+Section_End = """\
+      </text:section>\
 """
 
 
 class OdtFormatter(DiffLineVisitor):
     def __init__(self):
         self.result = []
+        self.prevChunkBlockType = ""
+        self.sectionId = 100
 
     def _clean(self, text):
         def compress(spaces):
@@ -47,12 +78,26 @@ class OdtFormatter(DiffLineVisitor):
         return """<text:p text:style-name="PX2">{text}</text:p>""".format(text=self._clean(text))
 
 
+    def _diffStartAddBlock(self):
+        self.sectionId += 1
+        return NewCode_Section_Start.format(isection=self.sectionId)
+
+
     def _diffAdd(self, text):
         return """<text:p text:style-name="PX3">{text}</text:p>""".format(text=self._clean(text))
 
 
+    def _diffStartRemoveBlock(self):
+        self.sectionId += 1
+        return OldCode_Section_Start.format(isection=self.sectionId)
+
+
     def _diffRemove(self, text):
         return """<text:p text:style-name="PX4">{text}</text:p>""".format(text=self._clean(text))
+
+
+    def _diffEndBlock(self):
+        return Section_End
 
 
     def _diffFilenameAdd(self, text):
@@ -63,7 +108,28 @@ class OdtFormatter(DiffLineVisitor):
         return """<text:p text:style-name="PX6">{text}</text:p>""".format(text=self._clean(text))
 
 
-    def onStart(self): pass
+    def _decorateChunkBlock(self, blockType):
+        if blockType == self.prevChunkBlockType:
+            return
+        if self.prevChunkBlockType in [ "+", "-" ]:
+            self.result.append(self._diffEndBlock())
+        if blockType == "+":
+            self.result.append(self._diffStartAddBlock())
+        elif blockType == "-":
+            self.result.append(self._diffStartRemoveBlock())
+        self.prevChunkBlockType = blockType
+
+
+    def onStart(self):
+        pass
+
+    def onStartSection(self, prevSection, newSection):
+        if newSection == "chunk":
+            self.prevChunkBlockType = ""
+
+    def onEndSection(self, section):
+        if section == "chunk":
+            self._decorateChunkBlock("")
 
     def onCommandStart(self, line):
         self.result.append( self._heading( 1, line) )
@@ -81,15 +147,20 @@ class OdtFormatter(DiffLineVisitor):
         self.result.append( self._diffFilenameAdd( line) )
 
     def onLineRemove(self, line):
+        self._decorateChunkBlock("-")
         self.result.append( self._diffRemove( line) )
 
     def onLineAdd(self, line):
+        self._decorateChunkBlock("+")
         self.result.append( self._diffAdd( line) )
 
     def onLineUnchanged(self, line):
+        self._decorateChunkBlock(" ")
         self.result.append( self._diffEqual( line) )
 
     def onOtherLine(self, line):
+        if self.section == "chunk":
+            self._decorateChunkBlock("")
         if len(line) > 0:
             self.result.append( self._standard( line) )
 
@@ -120,6 +191,7 @@ class OdtGenerator:
     def _writeDiffToOdf( self, difftext, contentTemplate ):
         style = [ """<office:automatic-styles>""", """</office:automatic-styles>""" ]
         text = [ """<office:text>""", """</office:text>""" ]
+        # FIXME: finding tags with text search is very fragile
         stylestart = contentTemplate.find(style[0]) + len(style[0])
         styleend = contentTemplate.find(style[1])
         textstart = contentTemplate.find(text[0]) + len(text[0])
@@ -128,7 +200,8 @@ class OdtGenerator:
         parts = [
                 contentTemplate[:stylestart],
                 Review_Styles,
-                contentTemplate[styleend:textstart]
+                contentTemplate[styleend:textstart],
+                Document_Variables
                 ]
 
         parts += OdtFormatter().getFormattedDiff( difftext )
