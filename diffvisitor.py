@@ -1,8 +1,11 @@
 #!/usr/bin/env cat
+import re
 
 class DiffLineVisitor:
     def __init__(self):
         self.section = ""
+        self.oldLineNumber = 0
+        self.newLineNumber = 0
 
 
     def _startSection( self, section ):
@@ -20,6 +23,17 @@ class DiffLineVisitor:
             self.section = ""
 
 
+    rxChunkHead = re.compile( r"^@@\s+\-(\d+),\d+\s+\+(\d+),\d+\s+@@" )
+    def _extractChunkLineNumbers(self, line):
+        mo = DiffLineVisitor.rxChunkHead.search( line )
+        if mo == None:
+            self.oldLineNumber = 0
+            self.newLineNumber = 0
+            return
+        self.oldLineNumber = int(mo.group(1))
+        self.newLineNumber = int(mo.group(2))
+
+
     def visitLines( self, text ):
         self.section = ""
         self.onStart()
@@ -35,6 +49,7 @@ class DiffLineVisitor:
                 self._startSection( "diff" )
             elif line.startswith( "@@" ):
                 self._startSection( "chunk-head" )
+                self._extractChunkLineNumbers(line)
                 self.onChunkStart(line)
                 self._startSection( "chunk" )
             elif self.section == "diff":
@@ -47,10 +62,14 @@ class DiffLineVisitor:
             elif self.section == "chunk":
                 if line.startswith( "-" ):
                     self.onLineRemove(line)
+                    self.oldLineNumber += 1
                 elif line.startswith( "+" ):
                     self.onLineAdd(line)
+                    self.newLineNumber += 1
                 elif line.startswith( " " ):
                     self.onLineUnchanged(line)
+                    self.oldLineNumber += 1
+                    self.newLineNumber += 1
                 else:
                     self.onOtherLine(line)
             else:

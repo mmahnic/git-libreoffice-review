@@ -75,7 +75,11 @@ class OdtFormatter(DiffLineVisitor):
 
 
     def _diffEqual(self, text):
-        return """<text:p text:style-name="PX2">{text}</text:p>""".format(text=self._clean(text))
+        lineno = "{} {}".format( self.oldLineNumber, self.newLineNumber )
+        text = self._clean(text)
+        return ( """<text:p text:style-name="PX2">"""
+                """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
+                """{text}</text:p>""".format(lineno=lineno, text=text) )
 
 
     def _diffStartAddBlock(self):
@@ -84,7 +88,11 @@ class OdtFormatter(DiffLineVisitor):
 
 
     def _diffAdd(self, text):
-        return """<text:p text:style-name="PX3">{text}</text:p>""".format(text=self._clean(text))
+        lineno = """<text:s text:c="{}"/>{}""".format(len("%d " % self.oldLineNumber), self.newLineNumber)
+        text = self._clean(text)
+        return ( """<text:p text:style-name="PX3">"""
+                """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
+                """{text}</text:p>""".format(lineno=lineno, text=text) )
 
 
     def _diffStartRemoveBlock(self):
@@ -93,7 +101,11 @@ class OdtFormatter(DiffLineVisitor):
 
 
     def _diffRemove(self, text):
-        return """<text:p text:style-name="PX4">{text}</text:p>""".format(text=self._clean(text))
+        lineno = """{}<text:s text:c="{}"/>""".format(self.oldLineNumber, len(" %d" % self.newLineNumber))
+        text = self._clean(text)
+        return ( """<text:p text:style-name="PX4">"""
+                """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
+                """{text}</text:p>""".format(lineno=lineno, text=text) )
 
 
     def _diffEndBlock(self):
