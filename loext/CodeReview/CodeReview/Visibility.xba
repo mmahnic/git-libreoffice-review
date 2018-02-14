@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE script:module PUBLIC "-//OpenOffice.org//DTD OfficeDocument 1.0//EN" "module.dtd">
+<script:module xmlns:script="http://openoffice.org/2000/script" script:name="Visibility" script:language="StarBasic">REM  *****  BASIC  *****
+
+Sub _SetDisplayMode(sMode as String)
+    &apos; dim dDate as Long
+    &apos; dim sDate as String
+    oTextfields = ThisComponent.TextFields
+    oTextfieldsEnumeration = oTextfields.createEnumeration
+    While oTextfieldsEnumeration.hasmoreelements
+       oTextfield = oTextfieldsEnumeration.nextelement
+       if oTextfield.supportsservice(&quot;com.sun.star.text.TextField.SetExpression&quot;) then
+         oTextfieldMaster = oTextfield.TextfieldMaster
+         if oTextfieldMaster.Name = &quot;DisplayMode&quot; then
+           &apos; dDate = Datevalue(Now())
+           &apos; sDate = dDate
+           &apos; oTextfieldMaster.Content = sDate
+           &apos; oTextFieldMaster.Content = &quot;1&quot;
+         end if
+         if oTextField.VariableName = &quot;DisplayMode&quot; then
+           oTextField.Content = sMode
+           oTextField.CurrentPresentation = sMode
+         end if 
+       end if
+    wend
+    oTextFields.Refresh
+end sub
+
+Sub _SetDisplayMode2(sMode as String)
+   &apos; The set-variable name is DisplayMode
+   dim sVarUri as String
+   dim oDoc as object, oVar as object
+   oDoc = ThisComponent
+   sVarUri = &quot;com.sun.star.text.fieldmaster.SetExpression.DisplayMode&quot;
+   if oDoc.getTextFieldMasters.hasByName(sVarUri) then
+      oVar = oDoc.getTextFieldMasters.getByName(sVarUri)
+      oVar.DependentTextFields(0).content = sMode
+   else
+      msgbox &quot;MyVarText not found&quot;
+   end if
+   oDoc.TextFields.Refresh
+end sub
+
+Sub ShowAddedLines
+	_SetDisplayMode2( &quot;1&quot; )
+end sub
+
+Sub ShowRemovedLines
+	_SetDisplayMode2( &quot;2&quot; )
+end sub
+
+Sub ShowAllLines
+	_SetDisplayMode2( &quot;3&quot; )
+end sub
+
+
+</script:module>
