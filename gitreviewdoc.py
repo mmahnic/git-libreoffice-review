@@ -3,7 +3,6 @@ import mainwin_ui as uimain
 import mainwin_ui_support as uimain_s
 from generator import DiffGeneratorSettings, DiffGenerator
 from odt import OdtGenerator as DocGenerator
-# from pandocodt import PandocOdtGenerator as DocGenerator
 
 
 def generateDiffDocument():

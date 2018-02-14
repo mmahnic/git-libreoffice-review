@@ -3,7 +3,7 @@ import re
 import subprocess as subp
 import datetime as dt
 
-from pandocodt import PandocOdtGenerator
+from odt import OdtGenerator as DocGenerator
 
 
 def strippedLines(text):
@@ -136,7 +136,7 @@ class DiffGenerator:
 def test():
     settings = DiffGeneratorSettings.testSettings()
     diffcmd = DiffGenerator(settings)
-    diffgen = PandocOdtGenerator(settings)
+    diffgen = DocGenerator(settings)
     diffgen.writeDocument( diffcmd )
 
 

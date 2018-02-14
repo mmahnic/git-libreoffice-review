@@ -5,7 +5,6 @@ import tempfile
 import subprocess as subp
 from xml.sax.saxutils import escape as xml_escape
 
-from markdownfmt import MarkdownFormatter
 from diffvisitor import DiffLineVisitor
 
 Review_Styles = """\
