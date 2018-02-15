@@ -36,21 +36,21 @@ Sub _SetDisplayMode2(sMode as String)
       oVar = oDoc.getTextFieldMasters.getByName(sVarUri)
       oVar.DependentTextFields(0).content = sMode
    else
-      msgbox &quot;MyVarText not found&quot;
+      msgbox &quot;DisplayMode not found&quot;
    end if
    oDoc.TextFields.Refresh
 end sub
 
 Sub ShowAddedLines
-	_SetDisplayMode2( &quot;1&quot; )
+   _SetDisplayMode2( &quot;1&quot; )
 end sub
 
 Sub ShowRemovedLines
-	_SetDisplayMode2( &quot;2&quot; )
+   _SetDisplayMode2( &quot;2&quot; )
 end sub
 
 Sub ShowAllLines
-	_SetDisplayMode2( &quot;3&quot; )
+   _SetDisplayMode2( &quot;3&quot; )
 end sub
 
 

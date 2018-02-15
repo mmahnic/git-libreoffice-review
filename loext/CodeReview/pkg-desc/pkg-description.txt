@@ -1,5 +1,5 @@
-CodeReview-0.1.20.oxt
+CodeReview-${oxt_version}.oxt
 Copyright (c) 2018  
 
-CodeReview-0.1.20.oxt
+CodeReview-${oxt_version}.oxt
 
