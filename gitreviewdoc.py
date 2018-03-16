@@ -23,6 +23,10 @@ def onInit(top, gui, *args, **kwargs):
     gui.edName.insert( 0, os.path.basename( gitroot ))
     # if 0: gui.txtFilters.insert( 1.0, "\n".join(os.getenv( "PATH" ).split(";")) )
 
+    # TODO: default ignore patterns should be read from a config file
+    ignored = [ "*.vcxproj", "*.filters", "*.svg", "*.rc", "**/autogen/**" ]
+    gui.txtFilters.insert( 1.0, "\n".join(ignored) )
+
 
 def findGitDir( startdir ):
     curdir = startdir
