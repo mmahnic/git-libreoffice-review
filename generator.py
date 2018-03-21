@@ -89,7 +89,7 @@ class DiffGeneratorSettings:
         for ignoreDef in self.ignores:
             if ignoreDef.find("'") >= 0:
                 continue
-            ignores.append( "':!%s'" % ignoreDef )
+            ignores.append( ":^%s" % ignoreDef )
         return ignores
 
 
