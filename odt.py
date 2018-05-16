@@ -48,7 +48,7 @@ Section_End = """\
 """
 
 
-class OdtFormatter(DiffLineVisitor):
+class OdtDiffFormatter(DiffLineVisitor):
     def __init__(self):
         self.result = []
         self.prevChunkBlockType = ""
@@ -182,6 +182,49 @@ class OdtFormatter(DiffLineVisitor):
         return self.result
 
 
+class OdtOverviewGenerator:
+    def __init__(self):
+        self.result = []
+
+    def _clean(self, text):
+        def compress(spaces):
+            return """<text:s text:c="%d"/>""" % len(spaces.group(0))
+        s = xml_escape(text)
+        s = re.sub( " {2,}", compress, s)
+        if s.startswith( " " ):
+            s = """<text:s text:c="1"/>""" + s[1:]
+        return s
+
+    def _standard(self, text):
+        return u"""<text:p text:style-name="PX1">{text}</text:p>""".format(text=self._clean(text))
+
+    def _timeAuthorLine(self, text):
+        return ( u"""<text:p text:style-name="PX3">"""
+                """{text}</text:p>""".format(text=text) )
+
+    def _heading(self, level, text):
+        return ( u"""<text:h text:style-name="Heading_20_{level}" text:outline-level="{level}">{text}</text:h>"""
+                ).format( level=level, text=self._clean(text) )
+
+    def visitLines( self, text ):
+        rxTimeAuthor = re.compile( r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" )
+        def isTimeAuthorLine( line ):
+            mo = rxTimeAuthor.search( line )
+            return mo is not None
+
+        self.result.append( self._heading( 1, "Overview" ) )
+        for line in text:
+            if isTimeAuthorLine( line ):
+                self.result.append( self._timeAuthorLine( line) )
+            else:
+                self.result.append( self._standard( line) )
+
+
+    def getFormattedOverview( self, text ):
+        self.visitLines( text )
+        return self.result
+
+
 class OdtGenerator:
     def __init__(self, settings):
         self.settings = settings
@@ -199,7 +242,7 @@ class OdtGenerator:
         return "xdata/%04d%02d%02d_%s.odt" % (now.year, now.month, now.day, self.settings.name)
 
 
-    def _writeDiffToOdf( self, difftext, contentTemplate ):
+    def _writeDiffToOdf( self, overviewText, diffText, contentTemplate ):
         style = [ """<office:automatic-styles>""", """</office:automatic-styles>""" ]
         text = [ """<office:text>""", """</office:text>""" ]
         # FIXME: finding tags with text search is very fragile
@@ -215,7 +258,9 @@ class OdtGenerator:
                 Document_Variables
                 ]
 
-        parts += OdtFormatter().getFormattedDiff( difftext )
+        parts += OdtOverviewGenerator().getFormattedOverview( overviewText );
+
+        parts += OdtDiffFormatter().getFormattedDiff( diffText )
 
         parts += [
                 contentTemplate[textend:]
@@ -224,20 +269,27 @@ class OdtGenerator:
         return "".join(parts)
 
 
-    def writeDocument(self, diffGenerator):
-        difftext = diffGenerator.generateDiff()
+    def writeDocument(self, diffGenerator, overviewGenerator=None):
+        diffText = diffGenerator.generateDiff()
+
+        overviewText = ""
+        if overviewGenerator is not None:
+            overviewText = overviewGenerator.generateOverview()
+
         template = self._findTemplate( self.settings.template )
         docfile = self._getOutputName()
         doc = zipfile.ZipFile(template, "r")
         tmphandle, tmpname = tempfile.mkstemp()
         newdoc = zipfile.ZipFile(docfile, "w", zipfile.ZIP_DEFLATED)
+
         for item in doc.infolist():
             buffer = doc.read(item.filename)
             if (item.filename == 'content.xml'):
                 content = doc.read(item).decode("utf-8")
-                content = self._writeDiffToOdf( difftext, content )
+                content = self._writeDiffToOdf( overviewText, diffText, content )
                 newdoc.writestr("content.xml", content.encode("utf-8"))
             else:
                 newdoc.writestr(item, buffer)
+
         doc.close()
         newdoc.close()

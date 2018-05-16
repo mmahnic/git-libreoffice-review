@@ -3,8 +3,6 @@ import re
 import subprocess as subp
 import datetime as dt
 
-from odt import OdtGenerator as DocGenerator
-
 
 def strippedLines(text):
     def emptyOrComment(l):
@@ -49,9 +47,9 @@ class DiffGeneratorSettings:
         it = klass()
         if 1:
             it.commits = [
-                    "1740318e200bfae82987e33267626fda7f955c39   233d12434260469c905a081a5de8585f748cd573",
-                    "9ef8b65ad997262f9901d7ee38dd75380f53dfb0" ]
-            it.root = "xdata/tscodeexport"
+                    "c4af5e4c47a710e4e69a192c7016c97e394b96fd 8abb36628690685c7aec6fda4ee184984d512c20",
+                    "5dfc658a0d4fad01ae7672a72bb1d7bab3eff9c0" ]
+            it.root = "."
         elif 1:
             it.commits = [ "2679e04a3554def1dd198937bddc9f377b847a7d" ]
             it.root = r"C:\Users\mmarko\prj\gitapps\wideocar4"
@@ -75,7 +73,7 @@ class DiffGeneratorSettings:
                     good.append(code)
 
             if len(good) == len(ids):
-                # FIXME: we can't display the initial commit this way, it has no parent!
+                # NOTE: we can't display the initial commit this way, it has no parent!
                 if len(good) == 1:
                     commits.append( ["%s^" % good[0], "%s" % good[0]] )
                 elif len(good) == 2:
@@ -133,11 +131,51 @@ class DiffGenerator:
         return difftext
 
 
+class OverviewGenerator:
+    def __init__(self, settings):
+        self.settings = settings
+        self.logFormat = '''--pretty=format:%ai %cn%n%B'''
+        self.merges = "--no-merges"
+
+
+    def createGitLogCommands( self ):
+        git = ["git", "log"]
+        options = [ self.logFormat, self.merges ]
+        commands = []
+        for commit in self.settings.getCleanCommits():
+            command = [] + git
+            command += options
+            command += [ "{}..{}".format(commit[0], commit[1]) ]
+            commands.append( ( command, commit ) )
+
+        return commands
+
+
+    def generateOverview(self):
+        logText = []
+        for command, commit in self.createGitLogCommands():
+            cwd = os.getcwd()
+            try:
+                os.chdir( self.settings.root )
+                out = subp.check_output( command )
+                logText += out.decode(self.settings.encoding, "replace").split("\n")
+            except Exception as e:
+                logText += ["**Error**: %s" % e, ""]
+                print(e) # TODO: send to UI
+            os.chdir( cwd )
+
+        print logText
+        return logText
+
+
+
 def test():
+    from odt import OdtGenerator as DocGenerator
     settings = DiffGeneratorSettings.testSettings()
     diffcmd = DiffGenerator(settings)
+    overviewCmd = OverviewGenerator(settings)
     diffgen = DocGenerator(settings)
-    diffgen.writeDocument( diffcmd )
+    diffgen.writeDocument( diffcmd, overviewCmd )
 
 
 if __name__ == '__main__':
