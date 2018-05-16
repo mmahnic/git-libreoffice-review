@@ -164,7 +164,6 @@ class OverviewGenerator:
                 print(e) # TODO: send to UI
             os.chdir( cwd )
 
-        print logText
         return logText
 
 
