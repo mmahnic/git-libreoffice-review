@@ -1,15 +1,16 @@
 import os
 import mainwin_ui as uimain
 import mainwin_ui_support as uimain_s
-from generator import DiffGeneratorSettings, DiffGenerator
+from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
 from odt import OdtGenerator as DocGenerator
 
 
 def generateDiffDocument():
     settings = DiffGeneratorSettings.fromGuiFields(uimain_s.w)
     diffcmd = DiffGenerator(settings)
+    overviewCmd = OverviewGenerator(settings)
     diffgen = DocGenerator(settings)
-    diffgen.writeDocument( diffcmd )
+    diffgen.writeDocument( diffcmd, overviewCmd )
 
 
 def onInit(top, gui, *args, **kwargs):
