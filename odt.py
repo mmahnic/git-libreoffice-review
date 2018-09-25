@@ -7,7 +7,7 @@ from xml.sax.saxutils import escape as xml_escape
 
 from diffvisitor import DiffLineVisitor
 
-Review_Styles = """\
+Review_Styles = u"""\
     <style:style style:name="PX1" style:family="paragraph" style:parent-style-name="Standard"/>
     <style:style style:name="PX2" style:family="paragraph" style:parent-style-name="Preformatted_20_Text"/>
     <style:style style:name="PX3" style:family="paragraph" style:parent-style-name="diff_20_add"/>
@@ -26,7 +26,7 @@ Review_Styles = """\
 # A document variable 'DisplayMode' is set in a hidden section 'Settings'.
 # Other sections are hidden based on the value of the 'DisplayMode' variable.
 # The variable will be controlled by a macro that will be installed as an ooo extension.
-Document_Variables = """\
+Document_Variables = u"""\
       <text:variable-decls>
         <text:variable-decl office:value-type="float" text:name="DisplayMode"/>
       </text:variable-decls>
@@ -35,17 +35,27 @@ Document_Variables = """\
       </text:section>\
 """
 
-NewCode_Section_Start = """\
+NewCode_Section_Start = u"""\
       <text:section text:style-name="Sect1" text:name="diff{isection}" text:condition="ooow:(DisplayMode != 1) AND (DisplayMode != 3)" text:display="condition">\
 """
 
-OldCode_Section_Start = """\
+OldCode_Section_Start = u"""\
       <text:section text:style-name="Sect1" text:name="diff{isection}" text:condition="ooow:(DisplayMode != 2) AND (DisplayMode != 3)" text:display="condition">\
 """
 
-Section_End = """\
-      </text:section>\
-"""
+Section_End = u"""</text:section>"""
+
+def _spaces( numSpaces ):
+    if numSpaces < 1: return u""
+    if numSpaces == 1: return u" "
+    return u""" <text:s text:c="{}"/>""".format(numSpaces-1)
+
+def _cleanOdt( text ):
+    def compress(spaces):
+        return _spaces( len(spaces.group(0)) )
+    s = xml_escape(text)
+    s = re.sub( u" {2,}", compress, s)
+    return s
 
 
 class OdtDiffFormatter(DiffLineVisitor):
@@ -54,29 +64,20 @@ class OdtDiffFormatter(DiffLineVisitor):
         self.prevChunkBlockType = ""
         self.sectionId = 100
 
-    def _clean(self, text):
-        def compress(spaces):
-            return """<text:s text:c="%d"/>""" % len(spaces.group(0))
-        s = xml_escape(text)
-        s = re.sub( " {2,}", compress, s)
-        if s.startswith( " " ):
-            s = """<text:s text:c="1"/>""" + s[1:]
-        return s
-
 
     def _standard(self, text):
-        return """<text:p text:style-name="PX1">{text}</text:p>""".format(text=self._clean(text))
+        return u"""<text:p text:style-name="Standard">{text}</text:p>""".format(text=_cleanOdt(text))
 
 
     def _heading(self, level, text):
-        return ( """<text:h text:style-name="Heading_20_{level}" text:outline-level="{level}">{text}</text:h>"""
-                ).format( level=level, text=self._clean(text) )
+        return ( u"""<text:h text:style-name="Heading_20_{level}" text:outline-level="{level}">{text}</text:h>"""
+                ).format( level=level, text=_cleanOdt(text) )
 
 
     def _diffEqual(self, text):
-        lineno = "{} {}".format( self.oldLineNumber, self.newLineNumber )
-        text = self._clean(text)
-        return ( """<text:p text:style-name="PX2">"""
+        lineno = u"{} {}".format( self.oldLineNumber, self.newLineNumber )
+        text = _cleanOdt(text)
+        return ( u"""<text:p text:style-name="Preformatted_20_Text">"""
                 """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
                 """{text}</text:p>""".format(lineno=lineno, text=text) )
 
@@ -87,9 +88,9 @@ class OdtDiffFormatter(DiffLineVisitor):
 
 
     def _diffAdd(self, text):
-        lineno = """<text:s text:c="{}"/>{}""".format(len("%d " % self.oldLineNumber), self.newLineNumber)
-        text = self._clean(text)
-        return ( """<text:p text:style-name="PX3">"""
+        lineno = u"""<text:s text:c="{}"/>{}""".format(len("%d " % self.oldLineNumber), self.newLineNumber)
+        text = _cleanOdt(text)
+        return ( u"""<text:p text:style-name="diff_20_add">"""
                 """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
                 """{text}</text:p>""".format(lineno=lineno, text=text) )
 
@@ -100,9 +101,9 @@ class OdtDiffFormatter(DiffLineVisitor):
 
 
     def _diffRemove(self, text):
-        lineno = """{}<text:s text:c="{}"/>""".format(self.oldLineNumber, len(" %d" % self.newLineNumber))
-        text = self._clean(text)
-        return ( """<text:p text:style-name="PX4">"""
+        lineno = u"""{}<text:s text:c="{}"/>""".format(self.oldLineNumber, len(" %d" % self.newLineNumber))
+        text = _cleanOdt(text)
+        return ( u"""<text:p text:style-name="diff_20_remove">"""
                 """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
                 """{text}</text:p>""".format(lineno=lineno, text=text) )
 
@@ -112,11 +113,11 @@ class OdtDiffFormatter(DiffLineVisitor):
 
 
     def _diffFilenameAdd(self, text):
-        return """<text:p text:style-name="PX5">{text}</text:p>""".format(text=self._clean(text))
+        return u"""<text:p text:style-name="diff_20_fn_20_add">{text}</text:p>""".format(text=_cleanOdt(text))
 
 
     def _diffFilenameRemove(self, text):
-        return """<text:p text:style-name="PX6">{text}</text:p>""".format(text=self._clean(text))
+        return u"""<text:p text:style-name="diff_20_fn_20_remove">{text}</text:p>""".format(text=_cleanOdt(text))
 
 
     def _decorateChunkBlock(self, blockType):
@@ -186,25 +187,16 @@ class OdtOverviewGenerator:
     def __init__(self):
         self.result = []
 
-    def _clean(self, text):
-        def compress(spaces):
-            return """<text:s text:c="%d"/>""" % len(spaces.group(0))
-        s = xml_escape(text)
-        s = re.sub( " {2,}", compress, s)
-        if s.startswith( " " ):
-            s = """<text:s text:c="1"/>""" + s[1:]
-        return s
-
     def _standard(self, text):
-        return u"""<text:p text:style-name="PX1">{text}</text:p>""".format(text=self._clean(text))
+        return u"""<text:p text:style-name="Standard">{text}</text:p>""".format(text=_cleanOdt(text))
 
     def _timeAuthorLine(self, text):
-        return ( u"""<text:p text:style-name="PX3">"""
+        return ( u"""<text:p text:style-name="diff_20_add">"""
                 """{text}</text:p>""".format(text=text) )
 
     def _heading(self, level, text):
         return ( u"""<text:h text:style-name="Heading_20_{level}" text:outline-level="{level}">{text}</text:h>"""
-                ).format( level=level, text=self._clean(text) )
+                ).format( level=level, text=_cleanOdt(text) )
 
     def visitLines( self, text ):
         rxTimeAuthor = re.compile( r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" )
@@ -293,3 +285,4 @@ class OdtGenerator:
 
         doc.close()
         newdoc.close()
+
