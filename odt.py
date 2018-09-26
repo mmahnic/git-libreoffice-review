@@ -199,7 +199,7 @@ class OdtOverviewGenerator:
                 ).format( level=level, text=_cleanOdt(text) )
 
     def visitLines( self, text ):
-        rxTimeAuthor = re.compile( r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" )
+        rxTimeAuthor = re.compile( r"^[0-9a-zA-Z]* *\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}" )
         def isTimeAuthorLine( line ):
             mo = rxTimeAuthor.search( line )
             return mo is not None

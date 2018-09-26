@@ -49,22 +49,20 @@ class DiffGeneratorSettings:
         for iddef in self.commits:
             ids = iddef.split()
             if len(ids) > 2 or len(ids) == 0:
+                print( "Bad commit range: ", iddef )
                 continue
 
-            good = []
-            for code in ids:
-                match = rxid.match( code )
-                if match != None:
-                    good.append(code)
+            if len(ids) == 1:
+                if ids[0].find("..") >= 0:
+                    commits.append(ids[0])
+                else:
+                    commits.append( "{0}^..{0}".format( ids[0] ) )
 
-            if len(good) == len(ids):
-                # NOTE: we can't display the initial commit this way, it has no parent!
-                if len(good) == 1:
-                    commits.append( ["%s^" % good[0], "%s" % good[0]] )
-                    # commits.append( "{0}^..{0}".format( good[0] ) )
-                elif len(good) == 2:
-                    commits.append( ["%s" % good[0], "%s" % good[1]] )
-                    # commits.append( "{0}..{1}".format( good[0], good[1] ) )
+            if len(ids) == 2:
+                if ids[0].find("..") >= 0 or ids[1].find("..") >= 0:
+                    print( "Bad commit range: ", iddef )
+                    continue
+                commits.append( "{0}..{1}".format( ids[0], ids[1] ) )
 
         return commits
 
@@ -92,7 +90,7 @@ class DiffGenerator:
         for commit in self.settings.getCleanCommits():
             command = [] + git
             command += options
-            command += commit
+            command += [commit]
             command += ["--" ] + self.settings.paths
             command += self.settings.getGitDiffIgnores()
             commands.append( ( command, commit ) )
@@ -106,7 +104,7 @@ class DiffGenerator:
             cwd = os.getcwd()
             try:
                 os.chdir( self.settings.rootDir )
-                difftext += ["[cmd] %s" % ( " ".join(commit) )]
+                difftext += ["[cmd] %s" % ( commit )]
                 difftext += ["%s" % ( " ".join(command) )]
                 out = subp.check_output( command )
                 difftext += out.decode(self.settings.encoding, "replace").split("\n")
@@ -121,7 +119,7 @@ class DiffGenerator:
 class OverviewGenerator:
     def __init__(self, settings):
         self.settings = settings
-        self.logFormat = '''--pretty=format:%ai %cn%n%B'''
+        self.logFormat = '''--pretty=format:%H %ai %cn%n%B'''
         self.merges = "--no-merges"
 
 
@@ -132,7 +130,7 @@ class OverviewGenerator:
         for commit in self.settings.getCleanCommits():
             command = [] + git
             command += options
-            command += [ "{}..{}".format(commit[0], commit[1]) ]
+            command += [commit]
             commands.append( ( command, commit ) )
 
         return commands
@@ -167,6 +165,10 @@ def test():
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
     diffgen = DocGenerator(settings)
+    diffgen.writeDocument( diffcmd, overviewCmd )
+
+    settings.name = "headancestor-to-head"
+    settings.commits = [ "HEAD^^...HEAD" ]
     diffgen.writeDocument( diffcmd, overviewCmd )
 
 
