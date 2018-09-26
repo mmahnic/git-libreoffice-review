@@ -18,7 +18,7 @@ class DiffGeneratorSettings:
         self.name = ""
         self.now = dt.datetime.now()
         self.paths = [ "." ]
-        self.root = "."
+        self.rootDir = "."
         self.encoding = "utf-8"
         self.template = "template/codereview_tmpl.odt"
         self.templateStyles = {
@@ -34,26 +34,11 @@ class DiffGeneratorSettings:
         it.commits = strippedLines(dialog.txtCommitIds.get( "1.0", "end-1c" ))
         it.ignores = strippedLines(dialog.txtFilters.get( "1.0", "end-1c" ))
         it.name = dialog.edName.get().strip()
-        it.root = dialog.edRepository.get().strip()
+        it.rootDir = dialog.edRepository.get().strip()
         if len(it.name) == 0:
             it.name = "review"
-        if len(it.root) == 0:
-            it.root = "."
-        return it
-
-
-    @classmethod
-    def testSettings(klass):
-        it = klass()
-        if 1:
-            it.commits = [
-                    "c4af5e4c47a710e4e69a192c7016c97e394b96fd 8abb36628690685c7aec6fda4ee184984d512c20",
-                    "5dfc658a0d4fad01ae7672a72bb1d7bab3eff9c0" ]
-            it.root = "."
-        elif 1:
-            it.commits = [ "2679e04a3554def1dd198937bddc9f377b847a7d" ]
-            it.root = r"C:\Users\mmarko\prj\gitapps\wideocar4"
-        it.name = "test"
+        if len(it.rootDir) == 0:
+            it.rootDir = "."
         return it
 
 
@@ -76,8 +61,10 @@ class DiffGeneratorSettings:
                 # NOTE: we can't display the initial commit this way, it has no parent!
                 if len(good) == 1:
                     commits.append( ["%s^" % good[0], "%s" % good[0]] )
+                    # commits.append( "{0}^..{0}".format( good[0] ) )
                 elif len(good) == 2:
-                    commits.append( ["%s^" % good[0], "%s" % good[1]]  )
+                    commits.append( ["%s" % good[0], "%s" % good[1]] )
+                    # commits.append( "{0}..{1}".format( good[0], good[1] ) )
 
         return commits
 
@@ -118,7 +105,7 @@ class DiffGenerator:
         for command, commit in self.createGitDiffCommands():
             cwd = os.getcwd()
             try:
-                os.chdir( self.settings.root )
+                os.chdir( self.settings.rootDir )
                 difftext += ["[cmd] %s" % ( " ".join(commit) )]
                 difftext += ["%s" % ( " ".join(command) )]
                 out = subp.check_output( command )
@@ -156,7 +143,7 @@ class OverviewGenerator:
         for command, commit in self.createGitLogCommands():
             cwd = os.getcwd()
             try:
-                os.chdir( self.settings.root )
+                os.chdir( self.settings.rootDir )
                 out = subp.check_output( command )
                 logText += out.decode(self.settings.encoding, "replace").split("\n")
             except Exception as e:
@@ -169,8 +156,14 @@ class OverviewGenerator:
 
 
 def test():
+    emptyHash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+    headHash = subp.check_output( ["git", "rev-parse", "HEAD"] ).strip()
     from odt import OdtGenerator as DocGenerator
-    settings = DiffGeneratorSettings.testSettings()
+
+    settings = DiffGeneratorSettings()
+    settings.name = "zero-to-head"
+    settings.commits = [ "{} {}".format(emptyHash, headHash) ]
+
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
     diffgen = DocGenerator(settings)
