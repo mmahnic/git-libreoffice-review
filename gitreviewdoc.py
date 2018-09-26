@@ -13,6 +13,22 @@ def generateDiffDocument():
     diffgen.writeDocument( diffcmd, overviewCmd )
 
 
+def addBranchDiffFromCommonAncestor():
+    def fixBranch( branch ):
+        return "HEAD" if len(branch.strip()) == 0 else branch.strip()
+
+    dialog = uimain_s.w
+    txtIds = dialog.txtCommitIds
+    fromBranch = fixBranch(uimain_s.comboBaseBranch.get())
+    toBranch = fixBranch(uimain_s.comboToBranch.get())
+
+    text = txtIds.get( "1.0", "end-1c" ).strip()
+    lines = text.split( "\n" ) if len(text) > 0 else []
+    lines.append( "{}...{}".format( fromBranch, toBranch ) )
+    txtIds.delete( 0.0, "end" )
+    txtIds.insert( 0.0, "\n".join( lines ))
+
+
 def onInit(top, gui, *args, **kwargs):
     # global w, top_level, root
     uimain_s.w = gui
@@ -41,6 +57,7 @@ def findGitDir( startdir ):
 
 def setupUiMainSupport():
     uimain_s.generateDiffDocument = generateDiffDocument
+    uimain_s.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestor
     uimain_s.init = onInit
 
 if __name__ == '__main__':
