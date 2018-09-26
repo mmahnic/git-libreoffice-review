@@ -235,12 +235,12 @@ class OdtGenerator:
 
 
     def _writeDiffToOdf( self, overviewText, diffText, contentTemplate ):
-        style = [ """<office:automatic-styles>""", """</office:automatic-styles>""" ]
-        text = [ """<office:text>""", """</office:text>""" ]
-        # FIXME: finding tags with text search is very fragile
-        stylestart = contentTemplate.find(style[0]) + len(style[0])
+        style = [ u"""<office:automatic-styles[^>]*>""", u"""</office:automatic-styles>""" ]
+        text = [ u"""<office:text[^>]*>""", u"""</office:text>""" ]
+
+        stylestart = re.search( style[0], contentTemplate ).end(0)
         styleend = contentTemplate.find(style[1])
-        textstart = contentTemplate.find(text[0]) + len(text[0])
+        textstart = re.search( text[0], contentTemplate ).end(0)
         textend = contentTemplate.find(text[1])
 
         parts = [
