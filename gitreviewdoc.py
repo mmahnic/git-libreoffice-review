@@ -1,11 +1,12 @@
 import os
 import mainwin_ui as uimain
 import mainwin_ui_support as uimain_s
+import gitjobs
 from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
 from odt import OdtGenerator as DocGenerator
 
 
-def generateDiffDocument():
+def generateDiffDocumentCb():
     settings = DiffGeneratorSettings.fromGuiFields(uimain_s.w)
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
@@ -13,7 +14,7 @@ def generateDiffDocument():
     diffgen.writeDocument( diffcmd, overviewCmd )
 
 
-def addBranchDiffFromCommonAncestor():
+def addBranchDiffFromCommonAncestorCb():
     def fixBranch( branch ):
         return "HEAD" if len(branch.strip()) == 0 else branch.strip()
 
@@ -29,21 +30,34 @@ def addBranchDiffFromCommonAncestor():
     txtIds.insert( 0.0, "\n".join( lines ))
 
 
-def onInit(top, gui, *args, **kwargs):
-    # global w, top_level, root
-    uimain_s.w = gui
-    uimain_s.top_level = top
-    uimain_s.root = top
+def prepareMainWindow( gui, guivars ):
     gitroot = findGitDir( os.getcwd() ) or os.getcwd()
     gui.edRepository.delete( 0, "end" )
     gui.edRepository.insert( 0, gitroot )
     gui.edName.insert( 0, os.path.basename( gitroot ))
-    # if 0: gui.txtFilters.insert( 1.0, "\n".join(os.getenv( "PATH" ).split(";")) )
+
+    branches, curBranch = gitjobs.getBranches( gitroot )
+    gui.comboBaseBranch.configure(values=branches)
+    gui.comboToBranch.configure(values=branches)
+    if "develop" in branches:
+        guivars.comboBaseBranch.set( "develop" )
+    elif "master" in branches:
+        guivars.comboBaseBranch.set( "master" )
+    if curBranch not in ["develop", "master"]:
+        guivars.comboToBranch.set( curBranch )
 
     # TODO: default ignore patterns should be read from a config file
     ignored = [ "*.sln", "*.vcxproj", "*.filters", "*.svg", "*.rc", "**/autogen/**",
             "*.odt", "*.fodt", "*.odg", "*.fodg" ]
     gui.txtFilters.insert( 1.0, "\n".join(ignored) )
+
+
+def onInit(top, gui, *args, **kwargs):
+    # global w, top_level, root
+    uimain_s.w = gui
+    uimain_s.top_level = top
+    uimain_s.root = top
+    prepareMainWindow( gui, uimain_s )
 
 
 def findGitDir( startdir ):
@@ -56,8 +70,8 @@ def findGitDir( startdir ):
 
 
 def setupUiMainSupport():
-    uimain_s.generateDiffDocument = generateDiffDocument
-    uimain_s.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestor
+    uimain_s.generateDiffDocument = generateDiffDocumentCb
+    uimain_s.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestorCb
     uimain_s.init = onInit
 
 if __name__ == '__main__':
