@@ -1,9 +1,18 @@
-import os, re
+import os, re, sys
 import mainwin_ui as uimain
 import mainwin_ui_support as uimain_s
 import gitjobs
 from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
 from odt import OdtGenerator as DocGenerator
+
+class Args(object):
+    def workingDir(self):
+        if self.working_dir is None or len(self.working_dir) == 0:
+            self.working_dir = [os.getcwd()]
+        workdir = self.working_dir[0] if len(self.working_dir) > 0 else os.getcwd()
+        return os.path.abspath( workdir )
+
+arguments = None
 
 def updateDocumentNameCb():
     gui = uimain_s.w
@@ -60,7 +69,7 @@ def addBranchDiffFromCommonAncestorCb():
 
 
 def prepareMainWindow( gui, guivars ):
-    gitroot = findGitDir( os.getcwd() ) or os.getcwd()
+    gitroot = findGitDir(arguments.workingDir()) or os.getcwd()
     branches, curBranch = gitjobs.getBranches( gitroot )
 
     gui.edRepository.delete( 0, "end" )
@@ -95,6 +104,7 @@ def findGitDir( startdir ):
         if os.path.exists( os.path.join( curdir, ".git" )):
             return curdir
         curdir = os.path.dirname( curdir )
+
     return None
 
 
@@ -103,6 +113,14 @@ def setupUiMainSupport():
     uimain_s.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestorCb
     uimain_s.init = onInit
 
+
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument( "--working-dir", nargs=1, action="store" )
+    arguments = Args()
+    parser.parse_args(namespace=arguments)
+
     setupUiMainSupport()
     uimain.vp_start_gui()
+
