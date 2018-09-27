@@ -119,12 +119,13 @@ class DiffGenerator:
 class OverviewGenerator:
     def __init__(self, settings):
         self.settings = settings
-        self.logFormat = '''--pretty=format:%H %ai %cn%n%B'''
+        self.logFormat = '''--pretty=format:$%m$s%H %ai %cn%n%B'''
         self.merges = "--no-merges"
 
 
     def createGitLogCommands( self ):
-        git = ["git", "log"]
+        # We are trying to keep only the commits that contribute to the diff.
+        git = ["git", "log", "--left-right" ]
         options = [ self.logFormat, self.merges ]
         commands = []
         for commit in self.settings.getCleanCommits():
@@ -136,6 +137,24 @@ class OverviewGenerator:
         return commands
 
 
+    # Keep right (>) commits from log --left-right
+    def _kipRightCommits( self, lines ):
+        rxLeftRight = re.compile( r"^\$[-<>]\$[0-9a-fA-F]{6,}" )
+        side = ""
+        res = []
+        for l in lines:
+            mo = rxLeftRight.search( l )
+            if mo is not None:
+                side = l[1]
+                if side == ">":
+                    l = l[3:]
+
+            if side == ">":
+                res.append( l )
+
+        return res
+
+
     def generateOverview(self):
         logText = []
         for command, commit in self.createGitLogCommands():
@@ -143,7 +162,8 @@ class OverviewGenerator:
             try:
                 os.chdir( self.settings.rootDir )
                 out = subp.check_output( command )
-                logText += out.decode(self.settings.encoding, "replace").split("\n")
+                logText += self._kipRightCommits( out.decode(
+                        self.settings.encoding, "replace").split("\n") )
             except Exception as e:
                 logText += ["**Error**: %s" % e, ""]
                 print(e) # TODO: send to UI
