@@ -37,6 +37,22 @@ class MainWindow():
         return mainwin_ui_support
 
 
+def _findCommitIdForName( lines ):
+    commitId = ""
+    for l in lines:
+        if l.find("..") > 0:
+            commitId = l.split("..")[1].strip(". \t")
+            break
+
+    if len(commitId) < 1:
+        for l in lines:
+            if len(l.split()) > 1:
+                commitId = l.split()[1]
+                break
+
+    return re.sub( "[^a-zA-Z0-9]+", "_", commitId )
+
+
 def updateDocumentNameCb():
     ctrls = MainWindow().controls()
     ctrlVars = MainWindow().controlVars()
@@ -44,17 +60,7 @@ def updateDocumentNameCb():
     txtIds = ctrls.txtCommitIds
     text = txtIds.get( "1.0", "end-1c" ).strip()
     lines = [ l.strip() for l in text.split("\n") if len(l.strip()) > 0 ]
-    commitId = ""
-    for l in lines:
-        if l.find("..") > 0:
-            commitId = l.split("..")[1].strip(". \t")
-            break
-    if len(commitId) < 1:
-        for l in lines:
-            if len(l.split()) > 1:
-                commitId = l.split()[1]
-                break
-    commitId = re.sub( "[^a-zA-Z0-9]+", "_", commitId )
+    commitId = _findCommitIdForName( lines )
 
     repo = os.path.basename(globalSettings.gitRoot())
     repo = re.sub( "[^a-zA-Z0-9]+", "_", repo )
@@ -82,10 +88,10 @@ def addBranchDiffFromCommonAncestorCb():
     ctrls = MainWindow().controls()
     ctrlVars = MainWindow().controlVars()
 
-    txtIds = ctrls.txtCommitIds
     fromBranch = fixBranch(ctrlVars.comboBaseBranch.get())
     toBranch = fixBranch(ctrlVars.comboToBranch.get())
 
+    txtIds = ctrls.txtCommitIds
     text = txtIds.get( "1.0", "end-1c" ).strip()
     lines = text.split( "\n" ) if len(text) > 0 else []
     lines.append( "{}...{}".format( fromBranch, toBranch ) )
