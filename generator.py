@@ -119,7 +119,7 @@ class DiffGenerator:
 class OverviewGenerator:
     def __init__(self, settings):
         self.settings = settings
-        self.logFormat = '''--pretty=format:$%m$s%H %ai %cn%n%B'''
+        self.logFormat = '''--pretty=format:$%m$%H %ai %cn%n%B'''
         self.merges = "--no-merges"
 
 
