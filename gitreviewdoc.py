@@ -1,9 +1,35 @@
-import os
+import os, re
 import mainwin_ui as uimain
 import mainwin_ui_support as uimain_s
 import gitjobs
 from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
 from odt import OdtGenerator as DocGenerator
+
+def updateDocumentNameCb():
+    gui = uimain_s.w
+    txtIds = gui.txtCommitIds
+    text = txtIds.get( "1.0", "end-1c" ).strip()
+    lines = [ l.strip() for l in text.split("\n") if len(l.strip()) > 0 ]
+    commitId = ""
+    for l in lines:
+        if l.find("..") > 0:
+            commitId = l.split("..")[1].strip(". \t")
+            break
+    if len(commitId) < 1:
+        for l in lines:
+            if len(l.split()) > 1:
+                commitId = l.split()[1]
+                break
+    commitId = re.sub( "[^a-zA-Z0-9]+", "_", commitId )
+
+    repo = os.path.basename(gui.edRepository.get().strip())
+    repo = re.sub( "[^a-zA-Z0-9]+", "_", repo )
+
+    gui.edName.delete( 0, "end" )
+    if len(commitId) > 0:
+        gui.edName.insert( 0, "{}-{}".format(repo, commitId) )
+    else:
+        gui.edName.insert( 0, "{}".format(repo) )
 
 
 def generateDiffDocumentCb():
@@ -29,14 +55,17 @@ def addBranchDiffFromCommonAncestorCb():
     txtIds.delete( 0.0, "end" )
     txtIds.insert( 0.0, "\n".join( lines ))
 
+    if len(dialog.edName.get().strip()) < 1:
+        updateDocumentNameCb()
+
 
 def prepareMainWindow( gui, guivars ):
     gitroot = findGitDir( os.getcwd() ) or os.getcwd()
+    branches, curBranch = gitjobs.getBranches( gitroot )
+
     gui.edRepository.delete( 0, "end" )
     gui.edRepository.insert( 0, gitroot )
-    gui.edName.insert( 0, os.path.basename( gitroot ))
 
-    branches, curBranch = gitjobs.getBranches( gitroot )
     gui.comboBaseBranch.configure(values=branches)
     gui.comboToBranch.configure(values=branches)
     if "develop" in branches:
