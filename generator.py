@@ -34,11 +34,8 @@ class DiffGeneratorSettings:
         it.commits = strippedLines(dialog.txtCommitIds.get( "1.0", "end-1c" ))
         it.ignores = strippedLines(dialog.txtFilters.get( "1.0", "end-1c" ))
         it.name = dialog.edName.get().strip()
-        it.rootDir = dialog.edRepository.get().strip()
         if len(it.name) == 0:
             it.name = "review"
-        if len(it.rootDir) == 0:
-            it.rootDir = "."
         return it
 
 
