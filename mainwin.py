@@ -1,16 +1,16 @@
 import os, re
 import gitjobs
-import mainwin_ui_support
+import mainwin_ui_support as support
+import textreport
 from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
 from odt import OdtGenerator
 from tktext import TkTextGenerator
 from settings import globalSettings, APPTITLE
 
-def setupUiMainSupport():
+def setupSupport():
     """Replace the globals in mainwin_ui_support with globals from this module
     so that ui_support can be freely regenerated."""
 
-    support = mainwin_ui_support
     support.generateDiffDocument = generateDiffDocumentCb
     support.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestorCb
     support.displayDiffPreview = displayDiffPreviewCb
@@ -19,7 +19,6 @@ def setupUiMainSupport():
 
 def onInit(top, gui, *args, **kwargs):
     # global w, top_level, root
-    support = mainwin_ui_support
     support.w = gui
     support.top_level = top
     support.root = top
@@ -30,13 +29,13 @@ class MainWindow():
     """An adapter for mainwin_ui_support to make the names more understandable."""
 
     def frame(self):
-        return mainwin_ui_support.top_level
+        return support.top_level
 
     def controls(self):
-        return mainwin_ui_support.w
+        return support.w
 
     def controlVars(self):
-        return mainwin_ui_support
+        return support
 
 
 def _findCommitIdForName( lines ):
@@ -87,9 +86,13 @@ def displayDiffPreviewCb():
     settings = DiffGeneratorSettings.fromGuiFields(MainWindow().controls())
     settings.rootDir = globalSettings.gitRoot()
 
+    reportWin = textreport.TextReport().create(MainWindow().frame())
+    # reportWin[0].focus_set()
+    textreport.TextReport().frame().title( "Diff Preview" )
+
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
-    tkText = MainWindow().controls().txtFilters # TODO: Popup window, modal!
+    tkText = textreport.TextReport().controls().txtReport
     tkText.delete( 0.0, "end" )
     diffgen = TkTextGenerator(settings, tkText)
     diffgen.writeDocument( diffcmd, overviewCmd )
