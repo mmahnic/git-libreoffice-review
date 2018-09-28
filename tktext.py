@@ -18,12 +18,12 @@ class TkTextDiffFormatter(DiffLineVisitor):
         self.prevChunkBlockType = blockType
 
     def _insertLineNumbers( self, oldLineNum, newLineNum ):
-        width = len("{}".format( self.oldLineNumber ))
+        width = max(3, len("{}".format( self.oldLineNumber )))
         style = 'removedLineNum' if oldLineNum is not None and newLineNum is None else 'keptLineNum'
         value = oldLineNum if oldLineNum is not None else ''
         self.tkText.insert( 'end', "{:{}}".format(value, width), ( style, ) )
 
-        width = len("{}".format( self.newLineNumber ))
+        width = max(3, len("{}".format( self.newLineNumber )))
         style = 'addedLineNum' if oldLineNum is None and newLineNum is not None else 'keptLineNum'
         value = newLineNum if newLineNum is not None else ''
         self.tkText.insert( 'end', " {:{}}".format(value, width), ( style, ) )
@@ -32,7 +32,30 @@ class TkTextDiffFormatter(DiffLineVisitor):
         self.tkText.insert( 'end', "\n" )
 
     def onStart(self):
-        pass
+        red = 'red'
+        green = 'green'
+        grey = 'lightgrey'
+        black = 'black'
+        blue = 'blue'
+
+        def courier( size ):
+            return 'courier {}'.format( size )
+
+        def helvetica( size, extra=None ):
+            return 'helvetica {}{}'.format( size, " " + extra if extra is not None else "" )
+
+        self.tkText.tag_configure( 'standard', foreground=black, font=helvetica(10) )
+        self.tkText.tag_configure( 'heading1', font=helvetica(16, "bold") )
+        self.tkText.tag_configure( 'heading2', font=helvetica(14, "bold") )
+        self.tkText.tag_configure( 'heading3', foreground=blue, font=helvetica(10, "bold") )
+        self.tkText.tag_configure( 'diffFilenameRemove', foreground=red, background=grey, font=courier(10) )
+        self.tkText.tag_configure( 'diffFilenameAdd', foreground=green, background=grey, font=courier(10) )
+        self.tkText.tag_configure( 'diffRemove', foreground=red, font=courier(10) )
+        self.tkText.tag_configure( 'diffAdd', foreground=green, font=courier(10) )
+        self.tkText.tag_configure( 'diffKeep', foreground=black, font=courier(10) )
+        self.tkText.tag_configure( 'removedLineNum', foreground=red, font=courier(9) )
+        self.tkText.tag_configure( 'addedLineNum', foreground=green, font=courier(9) )
+        self.tkText.tag_configure( 'keptLineNum', foreground=black, font=courier(9) )
 
     def onStartSection(self, prevSection, newSection):
         if newSection == "chunk":
@@ -77,14 +100,14 @@ class TkTextDiffFormatter(DiffLineVisitor):
     def onLineUnchanged(self, line):
         self._decorateChunkBlock(" ")
         self._insertLineNumbers( self.oldLineNumber, self.newLineNumber )
-        self.tkText.insert( 'end', line, ( 'diffEqual', ) )
+        self.tkText.insert( 'end', line, ( 'diffKeep', ) )
         self._insertNewLine()
 
     def onOtherLine(self, line):
         if self.section == "chunk":
             self._decorateChunkBlock("")
         if len(line) > 0:
-            self.tkText.insert( 'end', line )
+            self.tkText.insert( 'end', line, ( 'standard', ) )
             self._insertNewLine()
 
     def onEnd(self): pass
