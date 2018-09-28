@@ -2,7 +2,7 @@ import os
 import re
 import zipfile
 import tempfile
-import subprocess as subp
+import gitjobs
 from xml.sax.saxutils import escape as xml_escape
 
 from diffvisitor import DiffLineVisitor

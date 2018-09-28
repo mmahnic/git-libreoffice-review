@@ -1,7 +1,7 @@
 import os, sys
 import re
-import subprocess as subp
 import datetime as dt
+import gitjobs
 
 
 def strippedLines(text):
@@ -98,17 +98,15 @@ class DiffGenerator:
     def generateDiff(self):
         difftext = []
         for command, commit in self.createGitDiffCommands():
-            cwd = os.getcwd()
             try:
-                os.chdir( self.settings.rootDir )
                 difftext += ["[cmd] %s" % ( commit )]
                 difftext += ["%s" % ( " ".join(command) )]
-                out = subp.check_output( command )
-                difftext += out.decode(self.settings.encoding, "replace").split("\n")
+                out = gitjobs.check_output( command, cwd=self.settings.rootDir,
+                        encoding=self.settings.encoding )
+                difftext += out.split("\n")
             except Exception as e:
                 difftext += ["**Error**: %s" % e, ""]
                 print(e) # TODO: send to UI
-            os.chdir( cwd )
 
         return difftext
 
@@ -155,16 +153,13 @@ class OverviewGenerator:
     def generateOverview(self):
         logText = []
         for command, commit in self.createGitLogCommands():
-            cwd = os.getcwd()
             try:
-                os.chdir( self.settings.rootDir )
-                out = subp.check_output( command )
-                logText += self._kipRightCommits( out.decode(
-                        self.settings.encoding, "replace").split("\n") )
+                out = gitjobs.check_output( command, cwd=self.settings.rootDir,
+                        encoding=self.settings.encoding )
+                logText += self._kipRightCommits( out.split("\n") )
             except Exception as e:
                 logText += ["**Error**: %s" % e, ""]
                 print(e) # TODO: send to UI
-            os.chdir( cwd )
 
         return logText
 
@@ -172,7 +167,7 @@ class OverviewGenerator:
 
 def test():
     emptyHash = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
-    headHash = subp.check_output( ["git", "rev-parse", "HEAD"] ).strip()
+    headHash = gitjobs.check_output( ["git", "rev-parse", "HEAD"] ).strip()
     from odt import OdtGenerator as DocGenerator
 
     settings = DiffGeneratorSettings()
