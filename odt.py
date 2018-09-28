@@ -183,7 +183,7 @@ class OdtDiffFormatter(DiffLineVisitor):
         return self.result
 
 
-class OdtOverviewGenerator:
+class OdtOverviewFormatter:
     def __init__(self):
         self.result = []
 
@@ -231,7 +231,7 @@ class OdtGenerator:
 
     def _getOutputName( self ):
         now = self.settings.now
-        return "xdata/%04d%02d%02d_%s.odt" % (now.year, now.month, now.day, self.settings.name)
+        return "xdata/{:04}{:02}{:02}_{}.odt".format(now.year, now.month, now.day, self.settings.name)
 
 
     def _writeDiffToOdf( self, overviewText, diffText, contentTemplate ):
@@ -250,7 +250,7 @@ class OdtGenerator:
                 Document_Variables
                 ]
 
-        parts += OdtOverviewGenerator().getFormattedOverview( overviewText );
+        parts += OdtOverviewFormatter().getFormattedOverview( overviewText );
 
         parts += OdtDiffFormatter().getFormattedDiff( diffText )
 
