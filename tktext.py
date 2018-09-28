@@ -17,15 +17,15 @@ class TkTextDiffFormatter(DiffLineVisitor):
             pass # self.result.append(self._diffStartRemoveBlock())
         self.prevChunkBlockType = blockType
 
-    def _insertLineNumbers( self, oldLineNum, newLineNum ):
+    def _insertLineNumbers( self, addOldNum, addNewNum ):
         width = max(3, len("{}".format( self.oldLineNumber )))
-        style = 'removedLineNum' if oldLineNum is not None and newLineNum is None else 'keptLineNum'
-        value = oldLineNum if oldLineNum is not None else ''
+        style = 'removedLineNum' if addOldNum and not addNewNum else 'keptLineNum'
+        value = self.oldLineNumber if addOldNum else ''
         self.tkText.insert( 'end', "{:{}}".format(value, width), ( style, ) )
 
         width = max(3, len("{}".format( self.newLineNumber )))
-        style = 'addedLineNum' if oldLineNum is None and newLineNum is not None else 'keptLineNum'
-        value = newLineNum if newLineNum is not None else ''
+        style = 'addedLineNum' if not addOldNum and addNewNum else 'keptLineNum'
+        value = self.newLineNumber if addNewNum else ''
         self.tkText.insert( 'end', " {:{}}".format(value, width), ( style, ) )
 
     def _insertNewLine( self ):
@@ -87,19 +87,19 @@ class TkTextDiffFormatter(DiffLineVisitor):
 
     def onLineRemove(self, line):
         self._decorateChunkBlock("-")
-        self._insertLineNumbers( self.oldLineNumber, None )
+        self._insertLineNumbers( True, False )
         self.tkText.insert( 'end', line, ( 'diffRemove', ) )
         self._insertNewLine()
 
     def onLineAdd(self, line):
-        self._insertLineNumbers( None, self.newLineNumber )
+        self._insertLineNumbers( False, True )
         self._decorateChunkBlock("+")
         self.tkText.insert( 'end', line, ( 'diffAdd', ) )
         self._insertNewLine()
 
     def onLineUnchanged(self, line):
         self._decorateChunkBlock(" ")
-        self._insertLineNumbers( self.oldLineNumber, self.newLineNumber )
+        self._insertLineNumbers( True, True )
         self.tkText.insert( 'end', line, ( 'diffKeep', ) )
         self._insertNewLine()
 
