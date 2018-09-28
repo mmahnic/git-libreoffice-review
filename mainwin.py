@@ -2,7 +2,8 @@ import os, re
 import gitjobs
 import mainwin_ui_support
 from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
-from odt import OdtGenerator as DocGenerator
+from odt import OdtGenerator
+from tktext import TkTextGenerator
 from settings import globalSettings, APPTITLE
 
 def setupUiMainSupport():
@@ -12,6 +13,7 @@ def setupUiMainSupport():
     support = mainwin_ui_support
     support.generateDiffDocument = generateDiffDocumentCb
     support.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestorCb
+    support.displayDiffPreview = displayDiffPreviewCb
     support.init = onInit
 
 
@@ -77,7 +79,19 @@ def generateDiffDocumentCb():
 
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
-    diffgen = DocGenerator(settings)
+    diffgen = OdtGenerator(settings)
+    diffgen.writeDocument( diffcmd, overviewCmd )
+
+
+def displayDiffPreviewCb():
+    settings = DiffGeneratorSettings.fromGuiFields(MainWindow().controls())
+    settings.rootDir = globalSettings.gitRoot()
+
+    diffcmd = DiffGenerator(settings)
+    overviewCmd = OverviewGenerator(settings)
+    tkText = MainWindow().controls().txtFilters # TODO: Popup window, modal!
+    tkText.delete( 0.0, "end" )
+    diffgen = TkTextGenerator(settings, tkText)
     diffgen.writeDocument( diffcmd, overviewCmd )
 
 
