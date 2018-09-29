@@ -26,19 +26,6 @@ def onInit(top, gui, *args, **kwargs):
     prepareMainWindow(gui)
 
 
-class MainWindow():
-    """An adapter for mainwin_ui_support to make the names more understandable."""
-
-    def frame(self):
-        return support.top_level
-
-    def controls(self):
-        return support.w
-
-    def controlVars(self):
-        return support
-
-
 def _findCommitIdForName( lines ):
     commitId = ""
     for l in lines:
@@ -84,15 +71,12 @@ def displayDiffPreviewCb(gui):
     settings = DiffGeneratorSettings.fromGuiFields(gui)
     settings.rootDir = globalSettings.gitRoot()
 
-    # reportWin = textreport.TextReport().create(MainWindow().frame())
-    # textreport.TextReport().frame().title( "Diff Preview" )
-
-    reportWin = textreport.TextReport().create(gui.top_level)
-    reportWin[1].top_level.title( "Diff Preview" )
+    (reportFrame, reportGui) = textreport.getOrCreateTextReport(gui.top_level)
+    reportGui.top_level.title( "Diff Preview" )
 
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
-    tkText = textreport.TextReport().controls().txtReport
+    tkText = reportGui.txtReport
     tkText.delete( 0.0, "end" )
     diffgen = TkTextGenerator(settings, tkText)
     diffgen.writeDocument( diffcmd, overviewCmd )
@@ -117,7 +101,7 @@ def addBranchDiffFromCommonAncestorCb(gui):
 
 
 def prepareMainWindow(gui):
-    frame = MainWindow().frame()
+    frame = gui.top_level
 
     gitroot = globalSettings.gitRoot()
     branches, curBranch = gitjobs.getBranches( gitroot )
