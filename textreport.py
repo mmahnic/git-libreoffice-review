@@ -13,7 +13,8 @@ def onInit(top, gui, *args, **kwargs):
     support.w = gui
     support.top_level = top
     support.root = top
-    prepareTextReport()
+    gui.top_level = top
+    prepareTextReport(gui)
 
 
 # TODO: Turn this into a base class for other windows
@@ -41,14 +42,14 @@ class TextReport():
 
         # create a new window
         (frame, controls) = textreport_ui.create_Report(root, *args, **kwargs)
-        frame.protocol("WM_DELETE_WINDOW", closeWindowCb)
+        frame.protocol("WM_DELETE_WINDOW", lambda: closeWindowCb(controls))
 
         return (frame, controls)
 
 
-def prepareTextReport():
+def prepareTextReport(controls):
     pass
 
 
-def closeWindowCb():
+def closeWindowCb(gui):
     support.destroy_window()
