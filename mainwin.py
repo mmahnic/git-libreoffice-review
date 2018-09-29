@@ -26,6 +26,35 @@ def onInit(top, gui, *args, **kwargs):
     prepareMainWindow(gui)
 
 
+def prepareMainWindow(gui):
+    frame = gui.top_level
+
+    gitroot = globalSettings.gitRoot()
+    branches, curBranch = gitjobs.getBranches( gitroot )
+
+    title = "{} - {} ({})".format(
+            APPTITLE,
+            os.path.basename(gitroot),
+            os.path.dirname(gitroot))
+
+    frame.title(title)
+
+    gui.comboBaseBranch.configure(values=branches)
+    gui.comboToBranch.configure(values=branches)
+
+    if "develop" in branches:
+        gui.varBaseBranch.set( "develop" )
+    elif "master" in branches:
+        gui.varBaseBranch.set( "master" )
+    if curBranch not in ["develop", "master"]:
+        gui.varToBranch.set( curBranch )
+
+    # TODO: default ignore patterns should be read from a config file
+    ignored = [ "*.sln", "*.vcxproj", "*.filters", "*.svg", "*.rc", "**/autogen/**",
+            "*.odt", "*.fodt", "*.odg", "*.fodg" ]
+    gui.txtFilters.insert( 1.0, "\n".join(ignored) )
+
+
 def _findCommitIdForName( lines ):
     commitId = ""
     for l in lines:
@@ -100,30 +129,3 @@ def addBranchDiffFromCommonAncestorCb(gui):
         updateDocumentNameCb(gui)
 
 
-def prepareMainWindow(gui):
-    frame = gui.top_level
-
-    gitroot = globalSettings.gitRoot()
-    branches, curBranch = gitjobs.getBranches( gitroot )
-
-    title = "{} - {} ({})".format(
-            APPTITLE,
-            os.path.basename(gitroot),
-            os.path.dirname(gitroot))
-
-    frame.title(title)
-
-    gui.comboBaseBranch.configure(values=branches)
-    gui.comboToBranch.configure(values=branches)
-
-    if "develop" in branches:
-        gui.varBaseBranch.set( "develop" )
-    elif "master" in branches:
-        gui.varBaseBranch.set( "master" )
-    if curBranch not in ["develop", "master"]:
-        gui.varToBranch.set( curBranch )
-
-    # TODO: default ignore patterns should be read from a config file
-    ignored = [ "*.sln", "*.vcxproj", "*.filters", "*.svg", "*.rc", "**/autogen/**",
-            "*.odt", "*.fodt", "*.odg", "*.fodg" ]
-    gui.txtFilters.insert( 1.0, "\n".join(ignored) )
