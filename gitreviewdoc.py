@@ -1,12 +1,15 @@
 import mainwin
 import mainwin_ui
+import textreport
 import socket
 import traceback
 
 
 if __name__ == '__main__':
     try:
-        mainwin.setupUiMainSupport()
+        mainwin.setupSupport()
+        textreport.setupSupport()
+
         mainwin_ui.vp_start_gui()
     except Exception as e:
         try:

@@ -1,40 +1,58 @@
 import os, re
 import gitjobs
-import mainwin_ui_support
+import mainwin_ui_support as support
+import textreport
 from generator import DiffGeneratorSettings, DiffGenerator, OverviewGenerator
-from odt import OdtGenerator as DocGenerator
+from odt import OdtGenerator
+from tktext import TkTextGenerator
 from settings import globalSettings, APPTITLE
 
-def setupUiMainSupport():
+def setupSupport():
     """Replace the globals in mainwin_ui_support with globals from this module
     so that ui_support can be freely regenerated."""
 
-    support = mainwin_ui_support
     support.generateDiffDocument = generateDiffDocumentCb
     support.addBranchDiffFromCommonAncestor = addBranchDiffFromCommonAncestorCb
+    support.displayDiffPreview = displayDiffPreviewCb
     support.init = onInit
 
 
 def onInit(top, gui, *args, **kwargs):
     # global w, top_level, root
-    support = mainwin_ui_support
     support.w = gui
     support.top_level = top
     support.root = top
-    prepareMainWindow()
+    gui.top_level = top
+    prepareMainWindow(gui)
 
 
-class MainWindow():
-    """An adapter for mainwin_ui_support to make the names more understandable."""
+def prepareMainWindow(gui):
+    frame = gui.top_level
 
-    def frame(self):
-        return mainwin_ui_support.top_level
+    gitroot = globalSettings.gitRoot()
+    branches, curBranch = gitjobs.getBranches( gitroot )
 
-    def controls(self):
-        return mainwin_ui_support.w
+    title = "{} - {} ({})".format(
+            APPTITLE,
+            os.path.basename(gitroot),
+            os.path.dirname(gitroot))
 
-    def controlVars(self):
-        return mainwin_ui_support
+    frame.title(title)
+
+    gui.comboBaseBranch.configure(values=branches)
+    gui.comboToBranch.configure(values=branches)
+
+    if "develop" in branches:
+        gui.varBaseBranch.set( "develop" )
+    elif "master" in branches:
+        gui.varBaseBranch.set( "master" )
+    if curBranch not in ["develop", "master"]:
+        gui.varToBranch.set( curBranch )
+
+    # TODO: default ignore patterns should be read from a config file
+    ignored = [ "*.sln", "*.vcxproj", "*.filters", "*.svg", "*.rc", "**/autogen/**",
+            "*.odt", "*.fodt", "*.odg", "*.fodg" ]
+    gui.txtFilters.insert( 1.0, "\n".join(ignored) )
 
 
 def _findCommitIdForName( lines ):
@@ -53,11 +71,8 @@ def _findCommitIdForName( lines ):
     return re.sub( "[^a-zA-Z0-9]+", "_", commitId )
 
 
-def updateDocumentNameCb():
-    ctrls = MainWindow().controls()
-    ctrlVars = MainWindow().controlVars()
-
-    txtIds = ctrls.txtCommitIds
+def updateDocumentNameCb(gui):
+    txtIds = gui.txtCommitIds
     text = txtIds.get( "1.0", "end-1c" ).strip()
     lines = [ l.strip() for l in text.split("\n") if len(l.strip()) > 0 ]
     commitId = _findCommitIdForName( lines )
@@ -66,68 +81,51 @@ def updateDocumentNameCb():
     repo = re.sub( "[^a-zA-Z0-9]+", "_", repo )
 
     if len(commitId) > 0:
-        ctrlVars.edName.set( "{}-{}".format(repo, commitId) )
+        gui.varName.set( "{}-{}".format(repo, commitId) )
     else:
-        ctrlVars.edName.set( "{}".format(repo) )
+        gui.varName.set( "{}".format(repo) )
 
 
-def generateDiffDocumentCb():
-    settings = DiffGeneratorSettings.fromGuiFields(MainWindow().controls())
+def generateDiffDocumentCb(gui):
+    settings = DiffGeneratorSettings.fromGuiFields(gui)
     settings.rootDir = globalSettings.gitRoot()
 
     diffcmd = DiffGenerator(settings)
     overviewCmd = OverviewGenerator(settings)
-    diffgen = DocGenerator(settings)
+    diffgen = OdtGenerator(settings)
     diffgen.writeDocument( diffcmd, overviewCmd )
 
 
-def addBranchDiffFromCommonAncestorCb():
+def displayDiffPreviewCb(gui):
+    settings = DiffGeneratorSettings.fromGuiFields(gui)
+    settings.rootDir = globalSettings.gitRoot()
+
+    (reportFrame, reportGui) = textreport.getOrCreateTextReport(gui.top_level)
+    reportGui.top_level.title( "Diff Preview" )
+
+    diffcmd = DiffGenerator(settings)
+    overviewCmd = OverviewGenerator(settings)
+    tkText = reportGui.txtReport
+    tkText.delete( 0.0, "end" )
+    diffgen = TkTextGenerator(settings, tkText)
+    diffgen.writeDocument( diffcmd, overviewCmd )
+
+
+def addBranchDiffFromCommonAncestorCb(gui):
     def fixBranch( branch ):
         return "HEAD" if len(branch.strip()) == 0 else branch.strip()
 
-    ctrls = MainWindow().controls()
-    ctrlVars = MainWindow().controlVars()
+    fromBranch = fixBranch(gui.varBaseBranch.get())
+    toBranch = fixBranch(gui.varToBranch.get())
 
-    fromBranch = fixBranch(ctrlVars.comboBaseBranch.get())
-    toBranch = fixBranch(ctrlVars.comboToBranch.get())
-
-    txtIds = ctrls.txtCommitIds
+    txtIds = gui.txtCommitIds
     text = txtIds.get( "1.0", "end-1c" ).strip()
     lines = text.split( "\n" ) if len(text) > 0 else []
     lines.append( "{}...{}".format( fromBranch, toBranch ) )
     txtIds.delete( 0.0, "end" )
     txtIds.insert( 0.0, "\n".join( lines ))
 
-    if len(ctrlVars.edName.get().strip()) < 1:
-        updateDocumentNameCb()
+    if len(gui.varName.get().strip()) < 1:
+        updateDocumentNameCb(gui)
 
 
-def prepareMainWindow():
-    ctrls = MainWindow().controls()
-    ctrlVars = MainWindow().controlVars()
-    frame = MainWindow().frame()
-
-    gitroot = globalSettings.gitRoot()
-    branches, curBranch = gitjobs.getBranches( gitroot )
-
-    title = "{} - {} ({})".format(
-            APPTITLE,
-            os.path.basename(gitroot),
-            os.path.dirname(gitroot))
-
-    frame.title(title)
-
-    ctrls.comboBaseBranch.configure(values=branches)
-    ctrls.comboToBranch.configure(values=branches)
-
-    if "develop" in branches:
-        ctrlVars.comboBaseBranch.set( "develop" )
-    elif "master" in branches:
-        ctrlVars.comboBaseBranch.set( "master" )
-    if curBranch not in ["develop", "master"]:
-        ctrlVars.comboToBranch.set( curBranch )
-
-    # TODO: default ignore patterns should be read from a config file
-    ignored = [ "*.sln", "*.vcxproj", "*.filters", "*.svg", "*.rc", "**/autogen/**",
-            "*.odt", "*.fodt", "*.odg", "*.fodg" ]
-    ctrls.txtFilters.insert( 1.0, "\n".join(ignored) )
