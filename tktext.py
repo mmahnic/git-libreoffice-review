@@ -4,18 +4,7 @@ from diffvisitor import DiffLineVisitor
 class TkTextDiffFormatter(DiffLineVisitor):
     def __init__(self, tkText):
         self.tkText = tkText
-        self.prevChunkBlockType = ""
 
-    def _decorateChunkBlock(self, blockType):
-        if blockType == self.prevChunkBlockType:
-            return
-        if self.prevChunkBlockType in [ "+", "-" ]:
-            pass # self.result.append(self._diffEndBlock())
-        if blockType == "+":
-            pass # self.result.append(self._diffStartAddBlock())
-        elif blockType == "-":
-            pass # self.result.append(self._diffStartRemoveBlock())
-        self.prevChunkBlockType = blockType
 
     def _insertLineNumbers( self, addOldNum, addNewNum ):
         width = max(3, len("{}".format( self.oldLineNumber )))
@@ -58,12 +47,10 @@ class TkTextDiffFormatter(DiffLineVisitor):
         self.tkText.tag_configure( 'keptLineNum', foreground=black, font=courier(9) )
 
     def onStartSection(self, prevSection, newSection):
-        if newSection == "chunk":
-            self.prevChunkBlockType = ""
+        pass
 
     def onEndSection(self, section):
-        if section == "chunk":
-            self._decorateChunkBlock("")
+        pass
 
     def onCommandStart(self, line):
         self.tkText.insert( 'end', line, ( 'heading1', ) )
@@ -86,26 +73,21 @@ class TkTextDiffFormatter(DiffLineVisitor):
         self._insertNewLine()
 
     def onLineRemove(self, line):
-        self._decorateChunkBlock("-")
         self._insertLineNumbers( True, False )
         self.tkText.insert( 'end', line, ( 'diffRemove', ) )
         self._insertNewLine()
 
     def onLineAdd(self, line):
         self._insertLineNumbers( False, True )
-        self._decorateChunkBlock("+")
         self.tkText.insert( 'end', line, ( 'diffAdd', ) )
         self._insertNewLine()
 
     def onLineUnchanged(self, line):
-        self._decorateChunkBlock(" ")
         self._insertLineNumbers( True, True )
         self.tkText.insert( 'end', line, ( 'diffKeep', ) )
         self._insertNewLine()
 
     def onOtherLine(self, line):
-        if self.section == "chunk":
-            self._decorateChunkBlock("")
         if len(line) > 0:
             self.tkText.insert( 'end', line, ( 'standard', ) )
             self._insertNewLine()
