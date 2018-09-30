@@ -65,6 +65,20 @@ class OdtDiffFormatter(DiffLineVisitor):
         self.sectionId = 100
 
 
+    def _formatLineNumbers( self, addOldNum, addNewNum ):
+        value = u"{}".format(self.oldLineNumber) if addOldNum else ''
+        # We add one space at the beggining of the line because it is "eaten" in LO-6.0
+        spaces = _spaces(1 + (0 if len(value) >= 3 else 3 - len(value)))
+        oldNum = u"{}{}".format( spaces, value )
+
+        value = u"{}".format(self.newLineNumber) if addNewNum else ''
+        # We add one space between the numbers
+        spaces = _spaces(1 + (0 if len(value) >= 3 else 3 - len(value)))
+        newNum = u"{}{}".format( spaces, value )
+
+        return (oldNum, newNum)
+
+
     def _standard(self, text):
         return u"""<text:p text:style-name="Standard">{text}</text:p>""".format(text=_cleanOdt(text))
 
@@ -75,7 +89,8 @@ class OdtDiffFormatter(DiffLineVisitor):
 
 
     def _diffEqual(self, text):
-        lineno = u"{} {}".format( self.oldLineNumber, self.newLineNumber )
+        oldNum, newNum = self._formatLineNumbers( True, True )
+        lineno = u"{}{}".format(oldNum, newNum)
         text = _cleanOdt(text)
         return ( u"""<text:p text:style-name="Preformatted_20_Text">"""
                 """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
@@ -88,7 +103,8 @@ class OdtDiffFormatter(DiffLineVisitor):
 
 
     def _diffAdd(self, text):
-        lineno = u"""<text:s text:c="{}"/>{}""".format(len("%d " % self.oldLineNumber), self.newLineNumber)
+        oldNum, newNum = self._formatLineNumbers( False, True )
+        lineno = u"{}{}".format(oldNum, newNum)
         text = _cleanOdt(text)
         return ( u"""<text:p text:style-name="diff_20_add">"""
                 """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
@@ -101,7 +117,8 @@ class OdtDiffFormatter(DiffLineVisitor):
 
 
     def _diffRemove(self, text):
-        lineno = u"""{}<text:s text:c="{}"/>""".format(self.oldLineNumber, len(" %d" % self.newLineNumber))
+        oldNum, newNum = self._formatLineNumbers( True, False )
+        lineno = u"{}{}".format(oldNum, newNum)
         text = _cleanOdt(text)
         return ( u"""<text:p text:style-name="diff_20_remove">"""
                 """<text:span text:style-name="lineNumbers">{lineno}</text:span>"""
