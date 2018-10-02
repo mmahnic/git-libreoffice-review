@@ -208,7 +208,7 @@ class OdtOverviewFormatter:
         return u"""<text:p text:style-name="Standard">{text}</text:p>""".format(text=_cleanOdt(text))
 
     def _timeAuthorLine(self, text):
-        return ( u"""<text:p text:style-name="diff_20_add">"""
+        return ( u"""<text:p text:style-name="commit_20_id">"""
                 """{text}</text:p>""".format(text=text) )
 
     def _heading(self, level, text):
