@@ -8,14 +8,6 @@ from xml.sax.saxutils import escape as xml_escape
 from diffvisitor import DiffLineVisitor
 
 Review_Styles = u"""\
-    <style:style style:name="PX1" style:family="paragraph" style:parent-style-name="Standard"/>
-    <style:style style:name="PX2" style:family="paragraph" style:parent-style-name="Preformatted_20_Text"/>
-    <style:style style:name="PX3" style:family="paragraph" style:parent-style-name="diff_20_add"/>
-    <style:style style:name="PX4" style:family="paragraph" style:parent-style-name="diff_20_remove"/>
-    <style:style style:name="PX5" style:family="paragraph" style:parent-style-name="diff_20_fn_20_add"/>
-    <style:style style:name="PX6" style:family="paragraph" style:parent-style-name="diff_20_fn_20_remove"/>
-    <style:style style:name="PX7" style:family="paragraph" style:parent-style-name="review_20_split"/>
-    <style:style style:name="PX8" style:family="paragraph" style:parent-style-name="review_20_comment"/>
     <style:style style:name="Sect1" style:family="section">
       <style:section-properties style:editable="false">
         <style:columns fo:column-count="1" fo:column-gap="0cm"/>
@@ -208,7 +200,7 @@ class OdtOverviewFormatter:
         return u"""<text:p text:style-name="Standard">{text}</text:p>""".format(text=_cleanOdt(text))
 
     def _timeAuthorLine(self, text):
-        return ( u"""<text:p text:style-name="diff_20_add">"""
+        return ( u"""<text:p text:style-name="commit_20_id">"""
                 """{text}</text:p>""".format(text=text) )
 
     def _heading(self, level, text):

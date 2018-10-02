@@ -20,12 +20,7 @@ class DiffGeneratorSettings:
         self.paths = [ "." ]
         self.rootDir = "."
         self.encoding = "utf-8"
-        self.template = "template/codereview_tmpl.odt"
-        self.templateStyles = {
-                "diff-add": "diff_20_add",
-                "diff-remove": "diff_20_remove",
-                "diff-fn-add": "diff_20_fn_20_add",
-                "diff-fn-remove": "diff_20_fn_20_remove" }
+        self.template = "template/codereview001_tmpl.odt"
 
 
     @classmethod
@@ -120,7 +115,7 @@ class OverviewGenerator:
 
     def createGitLogCommands( self ):
         # We are trying to keep only the commits that contribute to the diff.
-        git = ["git", "log", "--left-right" ]
+        git = ["git", "log", "--left-right", "--author-date-order", "--reverse" ]
         options = [ self.logFormat, self.merges ]
         commands = []
         for commit in self.settings.getCleanCommits():
