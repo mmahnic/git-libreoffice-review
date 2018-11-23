@@ -14,5 +14,6 @@ pyinstaller $opts \
    --specpath="xdata" \
    --workpath="xdata/build" \
    --distpath="xdata/dist" \
-   --add-data="../template/codereview_tmpl.odt${sep}template" \
+   --add-data="../template/codereview001_tmpl.odt${sep}template" \
+   --add-data="../template/codereview002_tmpl.odt${sep}template" \
    gitreviewdoc.py
