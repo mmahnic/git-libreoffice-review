@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-opts="--noconsole"
+opts="--noconsole --onefile"
 # opts="$opts --log-level=TRACE"
 
 if [ "$(which cygpath)" == "" ]; then
