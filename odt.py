@@ -240,7 +240,14 @@ class OdtGenerator:
 
     def _getOutputName( self ):
         now = self.settings.now
-        return "xdata/{:04}{:02}{:02}_{}.odt".format(now.year, now.month, now.day, self.settings.name)
+        outdir = ""
+        if os.path.isdir("xtemp"):
+            outdir = "xtemp"
+        elif os.path.isdir("xdata"):
+            outdir = "xdata"
+        else:
+            outdir = "."
+        return "{}/~{:04}{:02}{:02}_{}.odt".format(outdir, now.year, now.month, now.day, self.settings.name)
 
 
     def _writeDiffToOdf( self, overviewText, diffText, contentTemplate ):
