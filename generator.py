@@ -34,7 +34,7 @@ class DiffGeneratorSettings:
         return it
 
 
-    def getCleanCommits(self):
+    def getCleanCommits(self, context="diff"):
         rxid = re.compile( "[0-9a-fA-F]+" )
         commits = []
 
@@ -46,7 +46,10 @@ class DiffGeneratorSettings:
 
             if len(ids) == 1:
                 if ids[0].find("..") >= 0:
-                    commits.append(ids[0])
+                    if ids[0].endswith("..") and context=="diff":
+                        commits.append(ids[0].rstrip("."))
+                    else:
+                        commits.append(ids[0])
                 else:
                     commits.append( "{0}^..{0}".format( ids[0] ) )
 
@@ -79,7 +82,7 @@ class DiffGenerator:
         git = ["git", "diff"]
         options = [ self.diffMode, self.algorithm ]
         commands = []
-        for commit in self.settings.getCleanCommits():
+        for commit in self.settings.getCleanCommits("diff"):
             command = [] + git
             command += options
             command += [commit]
@@ -118,7 +121,7 @@ class OverviewGenerator:
         git = ["git", "log", "--left-right", "--author-date-order", "--reverse" ]
         options = [ self.logFormat, self.merges ]
         commands = []
-        for commit in self.settings.getCleanCommits():
+        for commit in self.settings.getCleanCommits("log"):
             command = [] + git
             command += options
             command += [commit]
