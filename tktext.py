@@ -1,5 +1,17 @@
-
+import re
 from diffvisitor import DiffLineVisitor
+
+# TODO: move to DiffGeneratorSettings
+INDENT_TAB_SIZE=2
+
+# TODO: DRY this is duplicated in odt.py
+RX_LEADTABS = re.compile("^(.)(\t+)")
+def _expandIndentTabs( text ):
+    def expand(tabs: re.Match):
+        spaces = " " * len(tabs.group(2)) * INDENT_TAB_SIZE
+        return f"{tabs.group(1)}{spaces}"
+    return RX_LEADTABS.sub(expand, text)
+
 
 class TkTextDiffFormatter(DiffLineVisitor):
     def __init__(self, tkText):
@@ -74,16 +86,19 @@ class TkTextDiffFormatter(DiffLineVisitor):
 
     def onLineRemove(self, line):
         self._insertLineNumbers( True, False )
+        line = _expandIndentTabs(line)
         self.tkText.insert( 'end', line, ( 'diffRemove', ) )
         self._insertNewLine()
 
     def onLineAdd(self, line):
         self._insertLineNumbers( False, True )
+        line = _expandIndentTabs(line)
         self.tkText.insert( 'end', line, ( 'diffAdd', ) )
         self._insertNewLine()
 
     def onLineUnchanged(self, line):
         self._insertLineNumbers( True, True )
+        line = _expandIndentTabs(line)
         self.tkText.insert( 'end', line, ( 'diffKeep', ) )
         self._insertNewLine()
 
