@@ -19,7 +19,6 @@ except ImportError:
     import tkinter.ttk as ttk
     py3 = True
 
-
 def addBranchDiffFromCommonAncestor(p1):
     print('mainwin_ui_support.addBranchDiffFromCommonAncestor')
     print('p1 = {0}'.format(p1))
@@ -50,5 +49,8 @@ def destroy_window():
 if __name__ == '__main__':
     import mainwin_ui
     mainwin_ui.vp_start_gui()
+
+
+
 
 
